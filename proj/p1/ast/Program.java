@@ -10,4 +10,8 @@ public class Program extends ASTNode {
     public void print(PrintStream ps) {
 	unitList.print(ps);
     }
+
+    public void check(TypeCheck checker){
+        unitList.check(checker);
+    }
 }

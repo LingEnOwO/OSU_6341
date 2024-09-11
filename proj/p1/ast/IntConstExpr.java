@@ -10,4 +10,8 @@ public class IntConstExpr extends Expr {
     public void print(PrintStream ps) {
 	ps.print(ival);
     }
+
+    public void check(TypeCheck checker){
+        checker.checkIntConstExpr(this);
+    }
 }

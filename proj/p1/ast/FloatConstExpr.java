@@ -10,4 +10,7 @@ public class FloatConstExpr extends Expr {
     public void print(PrintStream ps) {
 	ps.print(fval);
     }
+    public void check(TypeCheck checker){
+        checker.checkFloatConstExpr(this);
+    }
 }

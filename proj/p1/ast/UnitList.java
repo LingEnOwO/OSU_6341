@@ -12,12 +12,21 @@ public class UnitList extends ASTNode {
     public UnitList(Unit u, Location loc) { 
         super(loc);
 	unit = u;
-        unitList = null;
+    unitList = null;
     }
     public void print(PrintStream ps) {
 	unit.print(ps);
 	ps.println();
 	if (unitList != null)
 	    unitList.print(ps);
+    }
+
+    public void check(TypeCheck checker){
+        checker.checkUnitList(this);
+        /*checker.checkUnit(this.unit);
+        if (this.unitList != null) {
+            this.unitList.check(checker);  
+        }*/
+        
     }
 }

@@ -12,4 +12,8 @@ public class PrintStmt extends Stmt {
 	expr.print(ps);
 	ps.print(";");
     }
+
+    public void check(TypeCheck checker){
+        checker.checkPrintStmt(expr);
+    }
 }

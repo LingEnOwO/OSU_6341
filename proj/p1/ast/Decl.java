@@ -32,4 +32,8 @@ public class Decl extends Unit {
 	}
 	ps.print(";");
     }
+
+    public void check(TypeCheck checker){
+        checker.checkDecl(this);
+    }
 }

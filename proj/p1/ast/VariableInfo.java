@@ -1,28 +1,37 @@
 package ast;
 
 public class VariableInfo {
-    private String type;  // The type of the variable (e.g., int, float)
-    private Object value; // The value of the variable (e.g., 1 for int, 3.0 for float, null if uninitialized)
+    public enum VarType{
+        INT, FLOAT
+    }
+    private VarType type;
+    private  Integer intVal;
+    private Double floatVal;  
 
-    public VariableInfo(String type, Object value) {
+    /*public VariableInfo(VarType type) {
         this.type = type;
-        this.value = value;
-    }
+    }*/
 
-    // Getters and setters
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
+    public VariableInfo(VarType type, Integer intVal) {
         this.type = type;
+        this.intVal = intVal;
     }
 
-    public Object getValue() {
-        return value;
+    public VariableInfo(VarType type, Double floatVal) {
+        this.type = type;
+        this.floatVal = floatVal;
     }
 
-    public void setValue(Object value) {
-        this.value = value;
+    public VarType getType() {
+        return this.type;
+    }
+
+
+    public Integer getIntValue() {
+        return this.intVal;
+    }
+
+    public Double getFloatValue() {
+        return this.floatVal;
     }
 }

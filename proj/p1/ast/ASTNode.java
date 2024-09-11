@@ -13,5 +13,6 @@ abstract class ASTNode {
 	print(new PrintStream(b));
 	return new String(b.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
     }
+    public abstract void check(TypeCheck checker);
  
 }

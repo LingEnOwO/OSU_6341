@@ -16,9 +16,7 @@ public class PlusExpr extends Expr {
 	ps.print(")");
     }
 
-	/*public void check(Check checker) {
-        // Check the left and right expressions
-        expr1.check(checker);
-        expr2.check(checker);
-    }*/
+	public void check(TypeCheck checker) {
+        checker.checkPlusExpr(expr1, expr2);
+    }
 }

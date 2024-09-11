@@ -3,8 +3,11 @@ package interpreter;
 import java.io.*;
 import java.util.*;
 import parser.ParserWrapper;
+import ast.VariableInfo;
 import ast.Program;
-import ast.VarDecl;
+import ast.TypeCheck;
+import ast.VariableInfo;
+import java.util.HashMap;
 public class Interpreter {
 
     // Process return codes
@@ -26,14 +29,14 @@ public class Interpreter {
             Interpreter.fatalError("Uncaught parsing error: " + ex, EXIT_PARSING_ERROR);
         }
 
-	/*Type checking################
+	//Type checking################
         try {
-            Map<String, VarDecl> context = new HashMap<>();
-            astRoot.check(context);  // Perform the type checking
+            TypeCheck check = new TypeCheck();
+            astRoot.check(check);  // Perform the type checking
         } catch (Exception ex) {
             Interpreter.fatalError("Type checking error: " + ex, EXIT_STATIC_CHECKING_ERROR);
         }
-	*/
+        
 	
 	// for debugging
 	astRoot.print(System.out);
@@ -46,4 +49,5 @@ public class Interpreter {
         System.out.println(message);
         System.exit(processReturnCode);
     }
+    
 }

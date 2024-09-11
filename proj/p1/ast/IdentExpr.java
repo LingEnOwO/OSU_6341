@@ -13,13 +13,6 @@ public class IdentExpr extends Expr {
     }
 
     public void check(TypeCheck checker) {
-        // Check if the identifier has been declared
-        if (!checker.isDeclared(ident)) {
-            Interpreter.fatalError("Variable " + ident + " has not been declared yet", Interpreter.EXIT_STATIC_CHECKING_ERROR);
-        }
-        // Identifier is null -> the variable is used before assignment !!maybe use "or" u dont need two if
-        if (checker.getValue(ident) == null && checker.isDeclared(ident)){
-            Interpreter.fatalError("Variable " + ident + " has not been declared yet", Interpreter.EXIT_STATIC_CHECKING_ERROR);
-        }
+        checker.checkIdentExpr(this);
     }
 }
