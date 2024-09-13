@@ -8,10 +8,6 @@ public class VariableInfo {
     private  Integer intVal;
     private Double floatVal;  
 
-    /*public VariableInfo(VarType type) {
-        this.type = type;
-    }*/
-
     public VariableInfo(VarType type, Integer intVal) {
         this.type = type;
         this.intVal = intVal;

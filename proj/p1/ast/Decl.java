@@ -16,14 +16,6 @@ public class Decl extends Unit {
 	expr = e;
     }
 
-    /*public void check(Map<String, VarDecl> context) throws Exception {
-        varDecl.check(context);  // Check and add the variable declaration to the context
-
-        if (expr != null) {
-            expr.check(context);  // Check the expression for valid variable usage
-        }
-    }*/
-
     public void print(PrintStream ps) { 
 	varDecl.print(ps); 
 	if (expr != null) {

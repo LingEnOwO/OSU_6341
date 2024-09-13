@@ -23,10 +23,5 @@ public class UnitList extends ASTNode {
 
     public void check(TypeCheck checker){
         checker.checkUnitList(this);
-        /*checker.checkUnit(this.unit);
-        if (this.unitList != null) {
-            this.unitList.check(checker);  
-        }*/
-        
     }
 }

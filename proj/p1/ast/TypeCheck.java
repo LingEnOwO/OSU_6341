@@ -51,7 +51,7 @@ public class TypeCheck {
         String exprType = exprType(decl.expr);
         String decltype = checkVarDecl(decl.varDecl);
         if (!exprType.equals("null")  && exprType != decltype){
-            Interpreter.fatalError(decl.varDecl.ident + " is invalid declaration", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+            Interpreter.fatalError(decl.varDecl.ident + " is invalid declaration!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
     }
 
@@ -72,13 +72,13 @@ public class TypeCheck {
     public String checkIntVarDecl(IntVarDecl var){
         if(isDeclared(var.ident)){
             //Error message: "already declared"
-            Interpreter.fatalError("Variable " + var.ident + " has already been declared ", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+            Interpreter.fatalError("Variable " + var.ident + " has already been declared!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
             return "null";
         }
         else{
             this.symbolTable.put(var.ident, "int");
             // for debugging
-            System.out.println("Declared variable: " + var.ident);
+            //System.out.println("Declared variable: " + var.ident);
             return "int";
         }
         
@@ -87,52 +87,23 @@ public class TypeCheck {
     public String checkFloatVarDecl(FloatVarDecl var){
         if(isDeclared(var.ident)){
             //Error message: "already declared"
-            Interpreter.fatalError("Variable " + var.ident + " has already been declared ", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+            Interpreter.fatalError("Variable " + var.ident + " has already been declared!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
             return "null";
         }
         else{
             this.symbolTable.put(var.ident, "float");
             // for debugging
-            System.out.println("Declared variable: " + var.ident);
+            //System.out.println("Declared variable: " + var.ident);
             return "float";
         }
     }
 
-    /*  Method to declare a variable with an initial integer value
-    public void declareVariable(String ident, Integer intVal) {
-        symbolTable.put(ident, new VariableInfo(VariableInfo.VarType.INT, intVal));
-    }
-
-    // Method to declare a variable with an initial float value
-    public void declareVariable(String ident, Double floatVal) {
-        symbolTable.put(ident, new VariableInfo(VariableInfo.VarType.FLOAT, floatVal));
-    }*/
-
-
-    //------Expr-------- Expr, IdentExpr, IntConstExpr, FloatConstExpr, PlusExpr
-    public void checkExpr(Expr expr){
-        if(expr instanceof IdentExpr){
-            //call Ident
-        }
-        else if (expr instanceof IntConstExpr){
-            //call intConst
-        }
-        else if(expr instanceof FloatConstExpr){
-            //call FloatConst
-        }
-        else if(expr instanceof PlusExpr){
-            //call PlusConst
-        }
-        else{
-            // null?
-        }
-    }
-
+    //------Expr-------- IdentExpr, IntConstExpr, FloatConstExpr, exprType, PlusExpr
     public String checkIdentExpr(IdentExpr idExpr){
         //Check idExpr is int or float => call table's type
         String exprType = symbolTable.get(idExpr.ident);
         if (exprType == null){
-            Interpreter.fatalError("Variable " + idExpr.ident + " has not been declared yet", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+            Interpreter.fatalError("Variable " + idExpr.ident + " has not been declared yet!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
         if (exprType.equals("int")) {
             return "int";
@@ -155,8 +126,6 @@ public class TypeCheck {
     }
 
     //Retrieve Expr's type
-    //public boolean ()
-    // PlusExpr both side should be the same type
     public String exprType(Expr expr){
         if(expr instanceof IntConstExpr){
             return "int";
@@ -175,17 +144,26 @@ public class TypeCheck {
         }
         if(expr instanceof PlusExpr){
             PlusExpr plusExpr = (PlusExpr) expr;
-            checkPlusExpr(plusExpr.expr1,plusExpr.expr2);
+            return checkPlusExpr(plusExpr.expr1,plusExpr.expr2);
         }
-        /*if(expr instanceof Expr){
-            exprType(expr);
-        }*/
-        return "null";//?? not sure it is right
+        return "null";
     }
-    public void checkPlusExpr(Expr expr1, Expr expr2){
-        if (this.exprType(expr1) != this.exprType(expr2)){
-            Interpreter.fatalError("You cannot add two different type variables", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+    // PlusExpr both side should be the same type
+    public String checkPlusExpr(Expr expr1, Expr expr2){
+        String ex1 = exprType(expr1);
+        String ex2 = exprType(expr2);
+        
+        if(ex1.equals("int") && ex2.equals("int")){
+            return "int";
         }
+        if(ex1.equals("float") && ex2.equals("float")){
+            return "float";
+        }
+        if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
+            //System.out.println(ex1);
+            Interpreter.fatalError(expr1+" and "+expr2+ " are two different type variables. Adding them is not allowed!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+        }
+        return "null";
     }    
     
     //uniList
@@ -215,13 +193,14 @@ public class TypeCheck {
     //Assignment
     public void checkAssignment(String ident, Expr expr){
         if(!isDeclared(ident)){
-            System.out.println("assignment");
-            Interpreter.fatalError("Variable " + ident + " has not been declared yet", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+            //System.out.println("assignment");
+            Interpreter.fatalError("Variable " + ident + " has not been declared yet!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
         String identType = symbolTable.get(ident);
         String exprType = exprType(expr);
-        if(!identType.equals(exprType)){
-            Interpreter.fatalError("Invalid assignment", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+        if(!identType.equals(exprType) ){
+            //System.out.println(exprType);
+            Interpreter.fatalError("Invalid assignment!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
 
     }
