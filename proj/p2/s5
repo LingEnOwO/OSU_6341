@@ -1,0 +1,2 @@
+int x = 5; int y =6;
+if( x < 6) {int z = 3;}
