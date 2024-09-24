@@ -1,2 +1,2 @@
-int x = 5; int y =6;
-if( x < 6) {int z = 3;}
+int x = 4;
+if(x > 5){int y = x + 6;}

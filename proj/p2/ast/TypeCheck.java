@@ -2,50 +2,29 @@ package ast;
 import java.io.PrintStream;
 import java.util.HashMap;
 
-import ast.CompExpr;
-import ast.CondExpr;
+import ast.BlockStmt;
+import ast.IdentExpr;
+import ast.IfStmt;
+import ast.LogicalExpr;
+import ast.WhileStmt;
 import interpreter.Interpreter;
 
 public class TypeCheck {
     // A symbol table to track declared variables, types
-    private HashMap<String, String> symbolTable;
+    //private HashMap<String, String> symbolTable;
+    private SymbolTable currentTable;
 
     // Constructor to initialize the symbol table
     public TypeCheck() {
-        this.symbolTable = new HashMap<String, String>();
+        //this.symbolTable = new HashMap<String, String>();
+        this.currentTable = new SymbolTable(null);
     }
     
-    /* Method to retrieve the type of a variable
-    public String getType(String ident) {
-        String type = symbolTable.get(ident);
-        return type.getType();
-    }
-
-    Method to retrieve the value of a variable
-    public Integer getIntValue(String ident) {
-        VariableInfo intVar = symbolTable.get(ident);
-        return intVar.getIntValue();
-    }
-
-    public Double getFloatValue(String ident) {
-        VariableInfo floatVar = symbolTable.get(ident);
-        return floatVar.getFloatValue();
-    }
-    
-
-    Method to update the value of a variable
-    public void updateValue(String ident, Object value) {
-        VariableInfo info = symbolTable.get(ident);
-        if (info != null) {
-            info.setValue(value);
-        } else {
-            throw new RuntimeException("Variable " + ident + " not declared.");
-        }
-    }*/
 
     // Method to check if a variable has been declared
     public boolean isDeclared(String ident) {
-        return this.symbolTable.containsKey(ident);
+        //return this.symbolTable.containsKey(ident);
+        return this.currentTable.lookup(ident);
     }
     
     //----declare-----  Decl, VarDecl, IntVarDecl, FloatVarDecl
@@ -78,7 +57,8 @@ public class TypeCheck {
             return "null";
         }
         else{
-            this.symbolTable.put(var.ident, "int");
+            //this.symbolTable.put(var.ident, "int");
+            this.currentTable.put(var.ident, "int");
             // for debugging
             //System.out.println("Declared variable: " + var.ident);
             return "int";
@@ -93,7 +73,8 @@ public class TypeCheck {
             return "null";
         }
         else{
-            this.symbolTable.put(var.ident, "float");
+            //this.symbolTable.put(var.ident, "float");
+            this.currentTable.put(var.ident, "float");
             // for debugging
             //System.out.println("Declared variable: " + var.ident);
             return "float";
@@ -103,8 +84,10 @@ public class TypeCheck {
     //------Expr-------- IdentExpr, IntConstExpr, FloatConstExpr, exprType, PlusExpr
     public String checkIdentExpr(IdentExpr idExpr){
         //Check idExpr is int or float => call table's type
-        String exprType = symbolTable.get(idExpr.ident);
-        if (exprType == null){
+        //String exprType = symbolTable.get(idExpr.ident);
+        String exprType = currentTable.get(idExpr.ident);
+        System.out.println(idExpr.ident+": "+exprType);
+        if (exprType == "null"){
             Interpreter.fatalError("Variable " + idExpr.ident + " has not been declared yet!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
         if (exprType.equals("int")) {
@@ -114,6 +97,7 @@ public class TypeCheck {
             return "float";
         } 
         else {
+            System.out.println("here");
             return "null";
         }
 
@@ -174,7 +158,8 @@ public class TypeCheck {
             return "float";
         }
         if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
-            //System.out.println(ex1);
+            System.out.println(ex1);
+            System.out.println(ex2);
             Interpreter.fatalError(expr1+" and "+expr2+ " are two different type variables. Adding them is not allowed!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
         return "null";
@@ -185,20 +170,21 @@ public class TypeCheck {
     }
 
     //----CondExpr------------ CompExpr, LogicalExpr
-    public String CondExpr(CondExpr expr){
-        if (expr instanceof CondExpr){
-            return CondExpr(expr);
+    public void condExpr(CondExpr expr){
+        if (expr instanceof LogicalExpr){
+            LogicalExpr logicalExpr = (LogicalExpr) expr;
+            checkLogicalExpr(logicalExpr.expr1,logicalExpr.expr2);
         }
         if(expr instanceof CompExpr){
             CompExpr compExpr = (CompExpr) expr;
-            return this.checkCompExpr(compExpr.expr1, compExpr.expr2);
+            checkCompExpr(compExpr.expr1, compExpr.expr2);
         }
-        return "null";
+        //return "null";
     }
     public String checkCompExpr(Expr expr1, Expr expr2){
         String ex1 = exprType(expr1);
         String ex2 = exprType(expr2);
-        
+        //System.out.println(ex1);
         if(ex1.equals("int") && ex2.equals("int")){
             return "int";
         }
@@ -213,8 +199,8 @@ public class TypeCheck {
     }
 
     public void checkLogicalExpr(CondExpr expr1, CondExpr expr2){
-        String ex1 = CondExpr(expr1);
-        String ex2 = CondExpr(expr2);
+        condExpr(expr1);
+        condExpr(expr2);
         
     }
     
@@ -231,7 +217,26 @@ public class TypeCheck {
             AssignStmt assignStmt = (AssignStmt) unit;
             checkAssignStmt(assignStmt.ident, assignStmt.expr);
         }
-        else if(unit instanceof Decl){
+        if(unit instanceof BlockStmt){
+            BlockStmt blockStmt = (BlockStmt) unit;
+            checkBlockStmt(blockStmt.block);
+        }
+
+        if(unit instanceof IfStmt){
+            IfStmt ifStmt = (IfStmt) unit;
+            checkIfStmt(ifStmt);
+        }
+
+        if(unit instanceof PrintStmt){
+            PrintStmt printStmt = (PrintStmt) unit;
+            checkPrintStmt(printStmt.expr);
+        }
+        
+        if(unit instanceof WhileStmt){
+            WhileStmt whileStmt = (WhileStmt) unit;
+            checkWhileStmt(whileStmt);
+        }
+        if(unit instanceof Decl){
             Decl decl = (Decl) unit;
             checkDecl(decl);
         }
@@ -255,8 +260,8 @@ public class TypeCheck {
         }
 
         if(stmt instanceof PrintStmt){
-            PrintStmt PrintStmt = (PrintStmt) stmt;
-            checkPrintStmt(PrintStmt.expr);
+            PrintStmt printStmt = (PrintStmt) stmt;
+            checkPrintStmt(printStmt.expr);
         }
         
         if(stmt instanceof WhileStmt){
@@ -271,7 +276,8 @@ public class TypeCheck {
             //System.out.println("assignment");
             Interpreter.fatalError("Variable " + ident + " has not been declared yet!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
-        String identType = symbolTable.get(ident);
+        //String identType = symbolTable.get(ident);
+        String identType = currentTable.get(ident);
         String exprType = exprType(expr);
         if(!identType.equals(exprType) ){
             //System.out.println(exprType);
@@ -282,11 +288,26 @@ public class TypeCheck {
 
     //BlockStmt
     public void checkBlockStmt(UnitList ul){
+        //this.checkUnitList(ul);
+
+        // Create a new child symbol table
+        SymbolTable previousTable = this.currentTable; // Store the current table (parent)
+        this.currentTable = new SymbolTable(previousTable); // New child table for the block
+
+        // Process the block statements
         this.checkUnitList(ul);
+
+        // After processing the block, return to the parent table
+        this.currentTable = previousTable;
     }
 
     //IfStmt
-    public void checkIfStmt(IfStmt is){   
+    public void checkIfStmt(IfStmt is){ 
+        condExpr(is.expr);
+        checkStmt(is.thenstmt);
+        if(is.elsestmt != null){
+            this.checkStmt(is.elsestmt);
+        }
     }
     
     //PrintStmt
@@ -294,7 +315,8 @@ public class TypeCheck {
 
     //WhileStmt
     public void checkWhileStmt(WhileStmt ws){
-
+        condExpr(ws.expr);
+        checkStmt(ws.body);
     }
     
 

@@ -5,7 +5,8 @@ import java.util.*;
 import parser.ParserWrapper;
 import ast.Program;
 import ast.TypeCheck;
-import java.util.HashMap;
+//import java.util.HashMap;
+//import ast.SymbolTable;
 public class Interpreter {
 
     // Process return codes
