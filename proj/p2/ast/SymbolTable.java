@@ -5,45 +5,44 @@ import java.util.List;
 
 public class SymbolTable {
     private SymbolTable parent;
-    private HashMap<String, String> symbols; // Stores variable name and type
-    private List<SymbolTable> children;
+    private HashMap<String, String> symbols; 
+    //private List<SymbolTable> children;
 
-    // Constructor for creating a new table, with a link to the parent
     public SymbolTable(SymbolTable parent) {
         this.parent = parent;
         this.symbols = new HashMap<>();
-        this.children = new ArrayList<>();
+        /*this.children = new ArrayList<>();
         if (parent != null) {
-            parent.addChild(this); // Add this table as a child of the parent
-        }
+            parent.addChild(this); 
+        }*/
     }
 
-    // Add a symbol to the current table
     public void put(String name, String type) {
         symbols.put(name, type);
     }
-    // get
+    // Recursively find a symbol in the current or parent tables to get the type
     public String get(String name){
         if (symbols.containsKey(name)) {
             return symbols.get(name);
-        } else if (parent != null) {
+        } 
+        else if (parent != null) {
             return parent.get(name);
-        } else {
-            return "null"; // Symbol not found
+        } 
+        else {
+            return "null"; 
         }
     }
 
-    // Recursively lookup a symbol in the current or parent tables
+    // For declaration to see if the variable is declared or not
     public boolean lookup(String name) {
         if (symbols.containsKey(name)) {
             return true;
-        } else if (parent != null) {
-            return parent.lookup(name);
-        } else {
-            return false; // Symbol not found
+        } 
+        else {
+            return false; 
         }
     }
-
+/* 
     // Add a child table
     public void addChild(SymbolTable child) {
         children.add(child);
@@ -52,5 +51,5 @@ public class SymbolTable {
     // Get the parent of this table (useful for returning to outer scope)
     public SymbolTable getParent() {
         return parent;
-    }
+    }*/
 }

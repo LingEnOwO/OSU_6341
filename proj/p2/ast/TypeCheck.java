@@ -86,7 +86,7 @@ public class TypeCheck {
         //Check idExpr is int or float => call table's type
         //String exprType = symbolTable.get(idExpr.ident);
         String exprType = currentTable.get(idExpr.ident);
-        System.out.println(idExpr.ident+": "+exprType);
+        //System.out.println(idExpr.ident+": "+exprType);
         if (exprType == "null"){
             Interpreter.fatalError("Variable " + idExpr.ident + " has not been declared yet!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
@@ -97,7 +97,6 @@ public class TypeCheck {
             return "float";
         } 
         else {
-            System.out.println("here");
             return "null";
         }
 
@@ -158,9 +157,9 @@ public class TypeCheck {
             return "float";
         }
         if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
-            System.out.println(ex1);
-            System.out.println(ex2);
-            Interpreter.fatalError(expr1+" and "+expr2+ " are two different type variables. Adding them is not allowed!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+            //System.out.println(ex1);
+            //System.out.println(ex2);
+            Interpreter.fatalError(expr1+" and "+expr2+ " are two different types. The binary expression is invalid!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
         return "null";
     }
@@ -193,7 +192,7 @@ public class TypeCheck {
         }
         if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
             //System.out.println(ex1);
-            Interpreter.fatalError(expr1+" and "+expr2+ " are two different type variables. Comp!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+            Interpreter.fatalError(expr1+" and "+expr2+ " are two different types. The comparison expression is invalid!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
         return "null";
     }
@@ -272,7 +271,8 @@ public class TypeCheck {
 
     //AssignStmt
     public void checkAssignStmt(String ident, Expr expr){
-        if(!isDeclared(ident)){
+        if(currentTable.get(ident) == "null"){
+        //if(!isDeclared(ident)){
             //System.out.println("assignment");
             Interpreter.fatalError("Variable " + ident + " has not been declared yet!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
@@ -288,16 +288,9 @@ public class TypeCheck {
 
     //BlockStmt
     public void checkBlockStmt(UnitList ul){
-        //this.checkUnitList(ul);
-
-        // Create a new child symbol table
-        SymbolTable previousTable = this.currentTable; // Store the current table (parent)
-        this.currentTable = new SymbolTable(previousTable); // New child table for the block
-
-        // Process the block statements
+        SymbolTable previousTable = this.currentTable; 
+        this.currentTable = new SymbolTable(previousTable); 
         this.checkUnitList(ul);
-
-        // After processing the block, return to the parent table
         this.currentTable = previousTable;
     }
 

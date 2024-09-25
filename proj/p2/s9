@@ -1,0 +1,3 @@
+int x = 5 + readint; float y = readfloat; float z = 10.4;
+if ((x > 3 && z < 15.9) || ( y < z)){int p = 3; {p = x + 4;}}
+else{x = p;}

@@ -1,0 +1,1 @@
+int z = 5 + readint; {float z = readfloat; {int z = 1;}{float w = z + 6.4;}}
