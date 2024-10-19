@@ -34,6 +34,6 @@ public class LogicalExpr extends CondExpr {
     }
 
 	public void check(TypeCheck checker){
-		checker.checkLogicalExpr(expr1,expr2);
+		checker.checkLogicalExpr(expr1,expr2,op);
 	}
 }

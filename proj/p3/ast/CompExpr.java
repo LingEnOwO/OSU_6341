@@ -32,6 +32,6 @@ public class CompExpr extends CondExpr {
     }
 
 	public void check(TypeCheck checker){
-		checker.checkCompExpr(expr1,expr2);
+		checker.checkCompExpr(expr1,expr2,op);
 	}
 }

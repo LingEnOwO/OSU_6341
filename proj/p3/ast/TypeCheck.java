@@ -35,13 +35,13 @@ public class TypeCheck {
         if (declType.equals("int") && !exprType.equals("null")){
             VariableInfo varInfo = getExprValue(decl.expr);
             VariableInfo val = varInfo.copyWithIdentInt(decl.varDecl.ident);
-            System.out.println(val.getIdent()+": "+val.getIntValue());
+            //System.out.println(val.getIdent()+": "+val.getIntValue());
             this.symbolTable.put(decl.varDecl.ident,val);
         }
         if (declType.equals("float") && !exprType.equals("null")){
             VariableInfo varInfo = getExprValue(decl.expr);
             VariableInfo val = varInfo.copyWithIdentFloat(decl.varDecl.ident);
-            System.out.println(val.getIdent()+": "+val.getFloatValue());
+            //System.out.println(val.getIdent()+": "+val.getFloatValue());
             this.symbolTable.put(decl.varDecl.ident,val);
         }
         
@@ -278,38 +278,107 @@ public class TypeCheck {
     }
 
     //----CondExpr------------ CompExpr, LogicalExpr
-    public void condExpr(CondExpr expr){
+    public boolean condExpr(CondExpr expr){
         if (expr instanceof LogicalExpr){
             LogicalExpr logicalExpr = (LogicalExpr) expr;
-            checkLogicalExpr(logicalExpr.expr1,logicalExpr.expr2);
+            return checkLogicalExpr(logicalExpr.expr1,logicalExpr.expr2,logicalExpr.op);
         }
         if(expr instanceof CompExpr){
             CompExpr compExpr = (CompExpr) expr;
-            checkCompExpr(compExpr.expr1, compExpr.expr2);
+            return checkCompExpr(compExpr.expr1, compExpr.expr2, compExpr.op);
         }
-        //return "null";
+        return false;
     }
-    public String checkCompExpr(Expr expr1, Expr expr2){
+    public boolean checkCompExpr(Expr expr1, Expr expr2, int op){
         String ex1 = exprType(expr1);
         String ex2 = exprType(expr2);
         //System.out.println(ex1);
         if(ex1.equals("int") && ex2.equals("int")){
-            return "int";
+            Long val1 = getExprValue(expr1).getIntValue();
+            Long val2 = getExprValue(expr2).getIntValue();
+            return checkIntCond(val1, val2, op);
+            //return "int";
         }
         if(ex1.equals("float") && ex2.equals("float")){
-            return "float";
+            Double val1 = getExprValue(expr1).getFloatValue();
+            Double val2 = getExprValue(expr2).getFloatValue();
+            return checkFloatCond(val1, val2, op);
         }
         if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
             //System.out.println(ex1);
             Interpreter.fatalError(expr1+" and "+expr2+ " are two different types. The comparison expression is invalid!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
-        return "null";
+        return false;
+
     }
 
-    public void checkLogicalExpr(CondExpr expr1, CondExpr expr2){
-        condExpr(expr1);
-        condExpr(expr2);
-        
+    public boolean checkIntCond(Long val1, Long val2, int op){
+        switch(op){
+            case 1:
+                if (val1 >= val2) return true;
+                else return false;
+            case 2:
+                if (val1 > val2) return true;
+                else return false;
+            case 3:
+                if (val1 <= val2) return true;
+                else return false;
+            case 4:
+                if (val1 < val2) return true;
+                else return false;
+            case 5:
+                if (val1 == val2) return true;
+                else return false;
+            case 6:
+                if (val1 != val2) return true;
+                else return false;
+        }
+        return false;
+    }
+
+    public boolean checkFloatCond(Double val1, Double val2, int op){
+        switch(op){
+            case 1:
+                if (val1 >= val2) return true;
+                else return false;
+            case 2:
+                if (val1 > val2) return true;
+                else return false;
+            case 3:
+                if (val1 <= val2) return true;
+                else return false;
+            case 4:
+                if (val1 < val2) return true;
+                else return false;
+            case 5:
+                if (val1 == val2) return true;
+                else return false;
+            case 6:
+                if (val1 != val2) return true;
+                else return false;
+        }
+        return false;
+    }
+
+    public boolean checkLogicalExpr(CondExpr condExpr1, CondExpr condExpr2,int op){
+        boolean cond1 = condExpr(condExpr1);
+        if(op == 1){
+            if(cond1 == false) return false;
+            boolean cond2 = condExpr(condExpr2);
+            if(cond1 == true && cond2 == true) return true;
+            return false;
+        }
+        if(op == 2){
+            if(cond1 == true) return true;
+            boolean cond2 = condExpr(condExpr2);
+            if(cond2 == true) return true;
+            return false;
+        }
+        if(op == 3){
+            if(cond1 == true) return false;
+            return true;
+        }
+        return false;
     }
     
     //----------uniList-----------
@@ -395,13 +464,13 @@ public class TypeCheck {
             exType = VariableInfo.VarType.INT;
             newVal = newVal.copyWithIdentInt(ident);
             symbolTable.put(ident,newVal);
-            System.out.println(ident+": "+newVal.getIntValue());
+            //System.out.println(ident+": "+newVal.getIntValue());
         }
         else{
             exType = VariableInfo.VarType.FLOAT;
             newVal = newVal.copyWithIdentFloat(ident);
             symbolTable.put(ident,newVal);
-            System.out.println(ident+": "+newVal.getFloatValue());
+            //System.out.println(ident+": "+newVal.getFloatValue());
         }
         if(identType != exType){
             //System.out.println(exType);
@@ -421,15 +490,29 @@ public class TypeCheck {
 
     //IfStmt
     public void checkIfStmt(IfStmt is){ 
-        condExpr(is.expr);
-        checkStmt(is.thenstmt);
-        if(is.elsestmt != null){
-            this.checkStmt(is.elsestmt);
+        if(condExpr(is.expr) == true){
+            checkStmt(is.thenstmt);
         }
+        else{
+            if(is.elsestmt != null){
+                this.checkStmt(is.elsestmt);
+            }
+        }
+        
     }
     
     //PrintStmt
-    public void checkPrintStmt(Expr expr){}
+    public void checkPrintStmt(Expr expr){
+        String type = exprType(expr);
+        //System.out.println(expr);
+        VariableInfo val = getExprValue(expr);
+        if(type == "int"){
+            System.out.println(val.getIntValue());
+        }
+        if(type == "float"){
+            System.out.println(val.getFloatValue());
+        }
+    }
 
     //WhileStmt
     public void checkWhileStmt(WhileStmt ws){
