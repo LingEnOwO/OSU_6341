@@ -5,9 +5,8 @@ import java.util.*;
 import parser.ParserWrapper;
 import ast.Program;
 import ast.TypeCheck;
-
+import ast.VariableInfo;
 public class Interpreter {
-
     // Process return codes
     public static final int EXIT_SUCCESS = 0;
     public static final int EXIT_PARSING_ERROR = 1;
@@ -29,6 +28,7 @@ public class Interpreter {
         } catch (Exception ex) {
             Interpreter.fatalError("Uncaught parsing error: " + ex, EXIT_PARSING_ERROR);
         }
+        
         //Type checking################
         try {
             TypeCheck check = new TypeCheck();

@@ -49,5 +49,15 @@ public class VariableInfo {
     public VariableInfo copyWithIdentFloat(String ident) {
         return new VariableInfo(ident, this.type, this.floatVal);
     }
+
+    public static VariableInfo createInt(String ident, Long intValue) {
+        VariableInfo value = new VariableInfo(ident, VarType.INT, intValue);
+        return value;
+    }
+
+    public static VariableInfo createFloat(String ident, Double floatValue) {
+        VariableInfo value = new VariableInfo(ident, VarType.FLOAT, floatValue);
+        return value;
+    }
 }
 

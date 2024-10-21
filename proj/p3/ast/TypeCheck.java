@@ -1,6 +1,8 @@
 package ast;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.Queue;
+import java.util.LinkedList;
 import interpreter.Interpreter;
 import java.util.Scanner;
 
@@ -9,8 +11,8 @@ public class TypeCheck {
     //private HashMap<String, String> symbolTable;
     private HashMap<String, VariableInfo> symbolTable;
     //private SymbolTable currentTable;
-    Scanner s = new Scanner(System.in);
-
+    private Queue<VariableInfo> values = new LinkedList<>();
+    private Scanner s = new Scanner(System.in);
     // Constructor to initialize the symbol table
     public TypeCheck() {
         this.symbolTable = new HashMap<String, VariableInfo>();
@@ -32,17 +34,40 @@ public class TypeCheck {
         if (!exprType.equals("null")  && exprType != declType){
             Interpreter.fatalError(decl.varDecl.ident + " is invalid declaration!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
-        if (declType.equals("int") && !exprType.equals("null")){
-            VariableInfo varInfo = getExprValue(decl.expr);
-            VariableInfo val = varInfo.copyWithIdentInt(decl.varDecl.ident);
-            //System.out.println(val.getIdent()+": "+val.getIntValue());
-            this.symbolTable.put(decl.varDecl.ident,val);
+        if (declType.equals("int") && exprType.equals("int")){
+            VariableInfo exprVal = getExprValue(decl.expr);
+            if (decl.expr instanceof IntConstExpr){
+                VariableInfo val = exprVal.copyWithIdentInt(decl.varDecl.ident);
+                //System.out.println(val.getIdent()+": "+val.getIntValue());
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }
+            if (decl.expr instanceof ReadIntExpr ){
+                VariableInfo val = values.poll();
+                if (val.getType() != VariableInfo.VarType.INT) Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }
+            if (decl.expr instanceof BinaryExpr){
+                VariableInfo val = exprVal.copyWithIdentInt(decl.varDecl.ident);
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }
+           
         }
         if (declType.equals("float") && !exprType.equals("null")){
-            VariableInfo varInfo = getExprValue(decl.expr);
-            VariableInfo val = varInfo.copyWithIdentFloat(decl.varDecl.ident);
-            //System.out.println(val.getIdent()+": "+val.getFloatValue());
-            this.symbolTable.put(decl.varDecl.ident,val);
+            VariableInfo exprVal = getExprValue(decl.expr);
+            if (decl.expr instanceof FloatConstExpr){
+                VariableInfo val = exprVal.copyWithIdentFloat(decl.varDecl.ident);
+                //System.out.println(val.getIdent()+": "+val.getFloatValue());
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }
+            if (decl.expr instanceof ReadFloatExpr){
+                VariableInfo val = values.poll();
+                if (val.getType() != VariableInfo.VarType.FLOAT) Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }
+            if (decl.expr instanceof BinaryExpr){
+                VariableInfo val = exprVal.copyWithIdentFloat(decl.varDecl.ident);
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }
         }
         
     }
@@ -95,8 +120,6 @@ public class TypeCheck {
     }
 
     //------Expr-------- ExprValue, IdentExpr, IntConstExpr, FloatConstExpr, exprType, BinaryExpr, DivByZero, UnaryMinusExpr
-
-    // !!!need to implement other expression
     public VariableInfo getExprValue(Expr expr) {
         if (expr instanceof IntConstExpr) {
             IntConstExpr intConstExpr = (IntConstExpr) expr;
@@ -117,17 +140,22 @@ public class TypeCheck {
         if (expr instanceof BinaryExpr) {
             BinaryExpr binaryExpr = (BinaryExpr) expr;
             VariableInfo expr1 = getExprValue(binaryExpr.expr1);
+            if (binaryExpr.expr1 instanceof ReadIntExpr || binaryExpr.expr1 instanceof ReadFloatExpr) expr1 = values.poll();
             VariableInfo expr2 = getExprValue(binaryExpr.expr2);
-            if (expr1 == null || expr2 == null) {
+            if (binaryExpr.expr2 instanceof ReadIntExpr || binaryExpr.expr2 instanceof ReadFloatExpr) expr2 = values.poll();
+            /*if (expr1 == null || expr2 == null) {
                 return null;
-            }
+            }*/
             if (binaryExpr.op == 1){
+                
                 if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
+                    //System.out.println("here");
                     return new VariableInfo(null, VariableInfo.VarType.INT, expr1.getIntValue() + expr2.getIntValue());
                 }
                 if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
                     return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() + expr2.getFloatValue());
                 }
+                Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 2){
                 if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
@@ -136,6 +164,7 @@ public class TypeCheck {
                 if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
                     return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() - expr2.getFloatValue());
                 }
+                Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 3){
                 if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
@@ -144,6 +173,7 @@ public class TypeCheck {
                 if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
                     return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() * expr2.getFloatValue());
                 }
+                Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 4){
                 if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
@@ -152,9 +182,38 @@ public class TypeCheck {
                 if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
                     return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() / expr2.getFloatValue());
                 }
+                Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
         }
-
+        if (expr instanceof UnaryMinusExpr){
+            UnaryMinusExpr unaryMinusExpr = (UnaryMinusExpr) expr;
+            if(unaryMinusExpr.expr instanceof IntConstExpr){
+                IntConstExpr intConstExpr = (IntConstExpr) unaryMinusExpr.expr;
+                return new VariableInfo(null, VariableInfo.VarType.INT, intConstExpr.ival*(-1));
+            }
+            if(unaryMinusExpr.expr instanceof FloatConstExpr){
+                FloatConstExpr floatConstExpr = (FloatConstExpr) unaryMinusExpr.expr;
+                return new VariableInfo(null, VariableInfo.VarType.FLOAT, floatConstExpr.fval*(-1.0));
+            }
+        }
+        if (expr instanceof ReadIntExpr || expr instanceof ReadFloatExpr){
+            while(s.hasNext()){
+                if(s.hasNextInt()){
+                    values.add(VariableInfo.createInt(null, Long.valueOf(s.nextInt())));
+                }
+                else if(s.hasNextFloat()){
+                    values.add(VariableInfo.createFloat(null, Double.valueOf(s.nextFloat())));
+                }
+            }
+        }
+        /*if (expr instanceof ReadFloatExpr){
+            while(s.hasNext()){
+                if(s.hasNextFloat()){
+                    values.add(VariableInfo.createFloat(null, Double.valueOf(s.nextFloat())));
+                }
+                else Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
+            }
+        }*/
         return null;
     }
 
@@ -187,16 +246,16 @@ public class TypeCheck {
         return true;
     }
 
-    public void checkReadIntExpr(ReadIntExpr readIntExpr){
-        try{long intNum = s.nextLong();}
-        catch(Exception e){Interpreter.fatalError("Fail in stdin",Interpreter.EXIT_FAILED_STDIN_READ);}
-        //return true;
+    public boolean checkReadIntExpr(ReadIntExpr readIntExpr){
+        //try{long intNum = s.nextLong();}
+        //catch(Exception e){Interpreter.fatalError("Fail in stdin",Interpreter.EXIT_FAILED_STDIN_READ);}
+        return true;
     }
 
-    public void checkReadFloatExpr(ReadFloatExpr readFloatExpr){
-        try{Double floatNum = s.nextDouble();}
-        catch(Exception e){Interpreter.fatalError("Fail in stdin",Interpreter.EXIT_FAILED_STDIN_READ);}
-        //return true;
+    public boolean checkReadFloatExpr(ReadFloatExpr readFloatExpr){
+        //try{Double floatNum = s.nextDouble();}
+        //catch(Exception e){Interpreter.fatalError("Fail in stdin",Interpreter.EXIT_FAILED_STDIN_READ);}
+        return true;
     }
 
     //Retrieve Expr's type

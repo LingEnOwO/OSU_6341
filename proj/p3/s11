@@ -1,0 +1,4 @@
+int x = readint + 8;
+float y = readfloat + 5. + readfloat;
+print x;
+print y;
