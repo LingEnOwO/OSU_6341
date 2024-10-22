@@ -5,7 +5,7 @@ import java.util.Queue;
 import java.util.LinkedList;
 import interpreter.Interpreter;
 import java.util.Scanner;
-
+//TODO: Refactoring -> in each java class 
 public class TypeCheck {
     // A symbol table to track declared variables, types
     //private HashMap<String, String> symbolTable;
@@ -36,17 +36,21 @@ public class TypeCheck {
         }
         if (declType.equals("int") && exprType.equals("int")){
             VariableInfo exprVal = getExprValue(decl.expr);
-            if (decl.expr instanceof IntConstExpr){
+            /*if (decl.expr instanceof IntConstExpr ){
                 VariableInfo val = exprVal.copyWithIdentInt(decl.varDecl.ident);
                 //System.out.println(val.getIdent()+": "+val.getIntValue());
                 this.symbolTable.put(decl.varDecl.ident,val);
-            }
+            }*/
             if (decl.expr instanceof ReadIntExpr ){
                 VariableInfo val = values.poll();
                 if (val.getType() != VariableInfo.VarType.INT) Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
                 this.symbolTable.put(decl.varDecl.ident,val);
             }
-            if (decl.expr instanceof BinaryExpr){
+            /*if (decl.expr instanceof BinaryExpr){
+                VariableInfo val = exprVal.copyWithIdentInt(decl.varDecl.ident);
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }*/
+            else{
                 VariableInfo val = exprVal.copyWithIdentInt(decl.varDecl.ident);
                 this.symbolTable.put(decl.varDecl.ident,val);
             }
@@ -54,17 +58,21 @@ public class TypeCheck {
         }
         if (declType.equals("float") && !exprType.equals("null")){
             VariableInfo exprVal = getExprValue(decl.expr);
-            if (decl.expr instanceof FloatConstExpr){
+            /*if (decl.expr instanceof FloatConstExpr){
                 VariableInfo val = exprVal.copyWithIdentFloat(decl.varDecl.ident);
                 //System.out.println(val.getIdent()+": "+val.getFloatValue());
                 this.symbolTable.put(decl.varDecl.ident,val);
-            }
+            }*/
             if (decl.expr instanceof ReadFloatExpr){
                 VariableInfo val = values.poll();
                 if (val.getType() != VariableInfo.VarType.FLOAT) Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
                 this.symbolTable.put(decl.varDecl.ident,val);
             }
-            if (decl.expr instanceof BinaryExpr){
+            /*if (decl.expr instanceof BinaryExpr){
+                VariableInfo val = exprVal.copyWithIdentFloat(decl.varDecl.ident);
+                this.symbolTable.put(decl.varDecl.ident,val);
+            }*/
+            else{
                 VariableInfo val = exprVal.copyWithIdentFloat(decl.varDecl.ident);
                 this.symbolTable.put(decl.varDecl.ident,val);
             }
@@ -194,6 +202,11 @@ public class TypeCheck {
             if(unaryMinusExpr.expr instanceof FloatConstExpr){
                 FloatConstExpr floatConstExpr = (FloatConstExpr) unaryMinusExpr.expr;
                 return new VariableInfo(null, VariableInfo.VarType.FLOAT, floatConstExpr.fval*(-1.0));
+            }
+            if(unaryMinusExpr.expr instanceof IdentExpr){
+                IdentExpr identExpr = (IdentExpr) unaryMinusExpr.expr;
+                if (symbolTable.get(identExpr.ident).getType() == VariableInfo.VarType.INT) return new VariableInfo(null, VariableInfo.VarType.INT, symbolTable.get(identExpr.ident).getIntValue()*(-1));
+                else return new VariableInfo(null, VariableInfo.VarType.FLOAT, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
             }
         }
         if (expr instanceof ReadIntExpr || expr instanceof ReadFloatExpr){
@@ -351,22 +364,43 @@ public class TypeCheck {
     public boolean checkCompExpr(Expr expr1, Expr expr2, int op){
         String ex1 = exprType(expr1);
         String ex2 = exprType(expr2);
-        //System.out.println(ex1);
-        if(ex1.equals("int") && ex2.equals("int")){
-            Long val1 = getExprValue(expr1).getIntValue();
-            Long val2 = getExprValue(expr2).getIntValue();
-            return checkIntCond(val1, val2, op);
-            //return "int";
-        }
-        if(ex1.equals("float") && ex2.equals("float")){
-            Double val1 = getExprValue(expr1).getFloatValue();
-            Double val2 = getExprValue(expr2).getFloatValue();
-            return checkFloatCond(val1, val2, op);
-        }
         if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
             //System.out.println(ex1);
             Interpreter.fatalError(expr1+" and "+expr2+ " are two different types. The comparison expression is invalid!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
+        if(ex1.equals("int") && ex2.equals("int")){
+            Long val1,val2;
+            if (expr1 instanceof ReadIntExpr){
+                getExprValue(expr1);
+                VariableInfo readVal1 = values.poll();
+                val1 = readVal1.getIntValue();
+            } 
+            else val1 = getExprValue(expr1).getIntValue();
+            if (expr2 instanceof ReadIntExpr){
+                getExprValue(expr2);
+                VariableInfo readVal2 = values.poll();
+                val2 = readVal2.getIntValue();
+            } 
+            else val2 = getExprValue(expr2).getIntValue();
+            return checkIntCond(val1, val2, op);
+        }
+        if(ex1.equals("float") && ex2.equals("float")){
+            Double val1,val2;
+            if (expr1 instanceof ReadFloatExpr){
+                getExprValue(expr1);
+                VariableInfo readVal1 = values.poll();
+                val1 = readVal1.getFloatValue();
+            } 
+            else val1 = getExprValue(expr1).getFloatValue();
+            if (expr2 instanceof ReadFloatExpr){
+                getExprValue(expr2);
+                VariableInfo readVal2 = values.poll();
+                val2 = readVal2.getFloatValue();
+            } 
+            else val2 = getExprValue(expr2).getFloatValue();
+            return checkFloatCond(val1, val2, op);
+        }
+        
         return false;
 
     }
@@ -421,15 +455,16 @@ public class TypeCheck {
 
     public boolean checkLogicalExpr(CondExpr condExpr1, CondExpr condExpr2,int op){
         boolean cond1 = condExpr(condExpr1);
+        boolean cond2 = condExpr(condExpr2);
         if(op == 1){
             if(cond1 == false) return false;
-            boolean cond2 = condExpr(condExpr2);
+            //boolean cond2 = condExpr(condExpr2);
             if(cond1 == true && cond2 == true) return true;
             return false;
         }
         if(op == 2){
             if(cond1 == true) return true;
-            boolean cond2 = condExpr(condExpr2);
+            //boolean cond2 = condExpr(condExpr2);
             if(cond2 == true) return true;
             return false;
         }
@@ -565,18 +600,22 @@ public class TypeCheck {
         String type = exprType(expr);
         //System.out.println(expr);
         VariableInfo val = getExprValue(expr);
-        if(type == "int"){
-            System.out.println(val.getIntValue());
+        if(type == "int" && !(expr instanceof ReadIntExpr)) System.out.println(val.getIntValue());
+        if(expr instanceof ReadIntExpr) {
+            if (values.peek().getType() == VariableInfo.VarType.INT) System.out.println(values.poll().getIntValue());
+            else Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
         }
-        if(type == "float"){
-            System.out.println(val.getFloatValue());
+        if(type == "float" && !(expr instanceof ReadFloatExpr)) System.out.println(val.getFloatValue());
+        if(expr instanceof ReadFloatExpr) {
+            if (values.peek().getType() == VariableInfo.VarType.FLOAT) System.out.println(values.poll().getFloatValue());
+            else Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
         }
     }
 
     //WhileStmt
     public void checkWhileStmt(WhileStmt ws){
-        condExpr(ws.expr);
-        checkStmt(ws.body);
+        while(condExpr(ws.expr))
+            checkStmt(ws.body);
     }
     
 
