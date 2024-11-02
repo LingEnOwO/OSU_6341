@@ -455,16 +455,16 @@ public class TypeCheck {
 
     public boolean checkLogicalExpr(CondExpr condExpr1, CondExpr condExpr2,int op){
         boolean cond1 = condExpr(condExpr1);
-        boolean cond2 = condExpr(condExpr2);
+        //boolean cond2 = condExpr(condExpr2);
         if(op == 1){
             if(cond1 == false) return false;
-            //boolean cond2 = condExpr(condExpr2);
+            boolean cond2 = condExpr(condExpr2);
             if(cond1 == true && cond2 == true) return true;
             return false;
         }
         if(op == 2){
             if(cond1 == true) return true;
-            //boolean cond2 = condExpr(condExpr2);
+            boolean cond2 = condExpr(condExpr2);
             if(cond2 == true) return true;
             return false;
         }
