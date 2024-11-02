@@ -1,0 +1,2 @@
+float x = -5.;
+print(x);

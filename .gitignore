@@ -11,6 +11,10 @@ proj/p3/ast/*.class
 proj/p3/interpreter/*.class
 proj/p3/parser/*.class
 
+proj/p4/ast/*.class
+proj/p4/interpreter/*.class
+proj/p4/parser/*.class
+
 # make output
 proj/p1/parser/Lexer.java
 proj/p1/parser/Parser.java
@@ -24,6 +28,10 @@ proj/p3/parser/Lexer.java
 proj/p3/parser/Parser.java
 proj/p3/parser/sym.java
 
+proj/p4/parser/Lexer.java
+proj/p4/parser/Parser.java
+proj/p4/parser/sym.java
+
 # jflex output
 proj/jflex-1.7.0/target/
 
@@ -31,3 +39,4 @@ proj.tar.gz
 p1.tar.gz
 p2.tar.gz
 p3.tar.gz
+p4.tar.gz

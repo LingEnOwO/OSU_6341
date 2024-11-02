@@ -1,0 +1,3 @@
+float x = 7.;
+float y = 8.;
+if (x<y) {print(x+1.0+y);} else{print(y);}
