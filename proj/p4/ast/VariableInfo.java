@@ -2,7 +2,7 @@ package ast;
 
 public class VariableInfo {
     public enum VarType{
-        INT, FLOAT
+        NegInt, ZeroInt, PosInt, AnyInt, NegFloat, ZeroFloat, PosFloat, AnyFloat
     }
     private String ident;
     private VarType type;
@@ -51,12 +51,12 @@ public class VariableInfo {
     }
 
     public static VariableInfo createInt(String ident, Long intValue) {
-        VariableInfo value = new VariableInfo(ident, VarType.INT, intValue);
+        VariableInfo value = new VariableInfo(ident, VarType.AnyInt, intValue);
         return value;
     }
 
     public static VariableInfo createFloat(String ident, Double floatValue) {
-        VariableInfo value = new VariableInfo(ident, VarType.FLOAT, floatValue);
+        VariableInfo value = new VariableInfo(ident, VarType.AnyFloat, floatValue);
         return value;
     }
 }

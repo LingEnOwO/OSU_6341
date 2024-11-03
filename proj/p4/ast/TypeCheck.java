@@ -24,10 +24,10 @@ public class TypeCheck {
     public void checkDecl(Decl decl){
         String exprType = exprType(decl.expr);
         String declType = checkVarDecl(decl.varDecl);
-        if (!exprType.equals("null")  && exprType != declType){
+        if (!exprType.equals("null")  && ((declType.equals("int") && exprType.contains("Float")) || (declType.equals("float") && exprType.contains("Int")))){
             Interpreter.fatalError(decl.varDecl.ident + " is invalid declaration!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
-        if (declType.equals("int") && exprType.equals("int")){
+        if (declType.equals("Int") && exprType.contains("Int")){
             VariableInfo exprVal = getExprValue(decl.expr);
             if (decl.expr instanceof ReadIntExpr ){
                 VariableInfo val = values.poll();
@@ -40,7 +40,7 @@ public class TypeCheck {
             }
            
         }
-        if (declType.equals("float") && !exprType.equals("null")){
+        if (declType.equals("Float") && exprType.contains("Float")){
             VariableInfo exprVal = getExprValue(decl.expr);
             if (decl.expr instanceof ReadFloatExpr){
                 VariableInfo val = values.poll();
@@ -76,10 +76,10 @@ public class TypeCheck {
             return "null";
         }
         else{
-            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.INT));
+            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.AnyInt));
             // for debugging
             //System.out.println("Declared variable: " + var.ident);
-            return "int";
+            return "Int";
         }
         
     }
@@ -91,10 +91,10 @@ public class TypeCheck {
             return "null";
         }
         else{
-            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.FLOAT));
+            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.AnyFloat));
             // for debugging
             //System.out.println("Declared variable: " + var.ident);
-            return "float";
+            return "Float";
         }
     }
 
@@ -102,61 +102,124 @@ public class TypeCheck {
     public VariableInfo getExprValue(Expr expr) {
         if (expr instanceof IntConstExpr) {
             IntConstExpr intConstExpr = (IntConstExpr) expr;
-            return new VariableInfo(null, VariableInfo.VarType.INT, intConstExpr.ival);
+            if (intConstExpr.ival > 0)
+                return new VariableInfo(null, VariableInfo.VarType.PosInt, intConstExpr.ival);
+            else if (intConstExpr.ival == 0)
+                return new VariableInfo(null, VariableInfo.VarType.ZeroInt, intConstExpr.ival);
+            else
+                return new VariableInfo(null, VariableInfo.VarType.NegInt, intConstExpr.ival);
         }
         if (expr instanceof FloatConstExpr) {
             FloatConstExpr floatConstExpr = (FloatConstExpr) expr;
-            return new VariableInfo(null, VariableInfo.VarType.FLOAT, floatConstExpr.fval);
+            if (floatConstExpr.fval > 0.0)
+                return new VariableInfo(null, VariableInfo.VarType.PosFloat, floatConstExpr.fval);
+            else if (floatConstExpr.fval == 0.0)
+                return new VariableInfo(null, VariableInfo.VarType.ZeroFloat, floatConstExpr.fval);
+            else
+                return new VariableInfo(null, VariableInfo.VarType.NegFloat, floatConstExpr.fval);
         }
         if (expr instanceof IdentExpr) {
             IdentExpr identExpr = (IdentExpr) expr;
             VariableInfo varInfo = this.symbolTable.get(identExpr.ident);
-            if (varInfo.getIntValue() == null && varInfo.getFloatValue() == null) {
-                return null;
-            }
             return varInfo;
         }
         if (expr instanceof BinaryExpr) {
             BinaryExpr binaryExpr = (BinaryExpr) expr;
+            String type = exprType(binaryExpr);
             VariableInfo expr1 = getExprValue(binaryExpr.expr1);
             if (binaryExpr.expr1 instanceof ReadIntExpr || binaryExpr.expr1 instanceof ReadFloatExpr) expr1 = values.poll();
             VariableInfo expr2 = getExprValue(binaryExpr.expr2);
             if (binaryExpr.expr2 instanceof ReadIntExpr || binaryExpr.expr2 instanceof ReadFloatExpr) expr2 = values.poll();
             if (binaryExpr.op == 1){
                 
-                if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
+                if (type.contains("Int")) {
                     //System.out.println("here");
-                    return new VariableInfo(null, VariableInfo.VarType.INT, expr1.getIntValue() + expr2.getIntValue());
+                    if (type.equals("PosInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosInt, expr1.getIntValue() + expr2.getIntValue());
+                    else if (type.equals("ZeroInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroInt, expr1.getIntValue() + expr2.getIntValue());
+                    else if (type.equals("NegInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegInt, expr1.getIntValue() + expr2.getIntValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyInt, expr1.getIntValue() + expr2.getIntValue());
                 }
-                if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
-                    return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() + expr2.getFloatValue());
+                if (type.contains("Float")) {
+                    if (type.equals("PosFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosFloat, expr1.getFloatValue() + expr2.getFloatValue());
+                    else if (type.equals("ZeroFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroFloat, expr1.getFloatValue() + expr2.getFloatValue());
+                    else if (type.equals("NegFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegFloat, expr1.getFloatValue() + expr2.getFloatValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() + expr2.getFloatValue());
                 }
                 //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 2){
-                if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
-                    return new VariableInfo(null, VariableInfo.VarType.INT, expr1.getIntValue() - expr2.getIntValue());
+                if (type.contains("Int")) {
+                    //System.out.println("here");
+                    if (type.equals("PosInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosInt, expr1.getIntValue() - expr2.getIntValue());
+                    else if (type.equals("ZeroInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroInt, expr1.getIntValue() - expr2.getIntValue());
+                    else if (type.equals("NegInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegInt, expr1.getIntValue() - expr2.getIntValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyInt, expr1.getIntValue() - expr2.getIntValue());
                 }
-                if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
-                    return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() - expr2.getFloatValue());
+                if (type.contains("Float")) {
+                    if (type.equals("PosFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosFloat, expr1.getFloatValue() - expr2.getFloatValue());
+                    else if (type.equals("ZeroFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroFloat, expr1.getFloatValue() - expr2.getFloatValue());
+                    else if (type.equals("NegFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegFloat, expr1.getFloatValue() - expr2.getFloatValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() - expr2.getFloatValue());
                 }
                 //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 3){
-                if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
-                    return new VariableInfo(null, VariableInfo.VarType.INT, expr1.getIntValue() * expr2.getIntValue());
+                if (type.contains("Int")) {
+                    //System.out.println("here");
+                    if (type.equals("PosInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosInt, expr1.getIntValue() * expr2.getIntValue());
+                    else if (type.equals("ZeroInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroInt, expr1.getIntValue() * expr2.getIntValue());
+                    else if (type.equals("NegInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegInt, expr1.getIntValue() * expr2.getIntValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyInt, expr1.getIntValue() * expr2.getIntValue());
                 }
-                if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
-                    return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() * expr2.getFloatValue());
+                if (type.contains("Float")) {
+                    if (type.equals("PosFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosFloat, expr1.getFloatValue() * expr2.getFloatValue());
+                    else if (type.equals("ZeroFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroFloat, expr1.getFloatValue() * expr2.getFloatValue());
+                    else if (type.equals("NegFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegFloat, expr1.getFloatValue() * expr2.getFloatValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() * expr2.getFloatValue());
                 }
                 //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 4){
-                if (expr1.getType() == VariableInfo.VarType.INT && expr2.getType() == VariableInfo.VarType.INT) {
-                    return new VariableInfo(null, VariableInfo.VarType.INT, expr1.getIntValue() / expr2.getIntValue());
+                if (type.contains("Int")) {
+                    //System.out.println("here");
+                    if (type.equals("ZeroInt"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroInt, expr1.getIntValue() / expr2.getIntValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyInt, expr1.getIntValue() / expr2.getIntValue());
                 }
-                if (expr1.getType() == VariableInfo.VarType.FLOAT && expr2.getType() == VariableInfo.VarType.FLOAT) {
-                    return new VariableInfo(null, VariableInfo.VarType.FLOAT, expr1.getFloatValue() / expr2.getFloatValue());
+                if (type.contains("Float")) {
+                    if (type.equals("PosFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosFloat, expr1.getFloatValue() / expr2.getFloatValue());
+                    else if (type.equals("ZeroFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroFloat, expr1.getFloatValue() / expr2.getFloatValue());
+                    else if (type.equals("NegFloat"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegFloat, expr1.getFloatValue() / expr2.getFloatValue());
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() / expr2.getFloatValue());
                 }
                 //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
@@ -165,16 +228,16 @@ public class TypeCheck {
             UnaryMinusExpr unaryMinusExpr = (UnaryMinusExpr) expr;
             if(unaryMinusExpr.expr instanceof IntConstExpr){
                 IntConstExpr intConstExpr = (IntConstExpr) unaryMinusExpr.expr;
-                return new VariableInfo(null, VariableInfo.VarType.INT, intConstExpr.ival*(-1));
+                return new VariableInfo(null, VariableInfo.VarType.NegInt, intConstExpr.ival*(-1));
             }
             if(unaryMinusExpr.expr instanceof FloatConstExpr){
                 FloatConstExpr floatConstExpr = (FloatConstExpr) unaryMinusExpr.expr;
-                return new VariableInfo(null, VariableInfo.VarType.FLOAT, floatConstExpr.fval*(-1.0));
+                return new VariableInfo(null, VariableInfo.VarType.NegFloat, floatConstExpr.fval*(-1.0));
             }
             if(unaryMinusExpr.expr instanceof IdentExpr){
                 IdentExpr identExpr = (IdentExpr) unaryMinusExpr.expr;
-                if (symbolTable.get(identExpr.ident).getType() == VariableInfo.VarType.INT) return new VariableInfo(null, VariableInfo.VarType.INT, symbolTable.get(identExpr.ident).getIntValue()*(-1));
-                else return new VariableInfo(null, VariableInfo.VarType.FLOAT, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
+                if (symbolTable.get(identExpr.ident).getType().name().contains("Int")) return new VariableInfo(null, VariableInfo.VarType.NegInt, symbolTable.get(identExpr.ident).getIntValue()*(-1));
+                else return new VariableInfo(null, VariableInfo.VarType.NegFloat, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
             }
         }
         if (expr instanceof ReadIntExpr || expr instanceof ReadFloatExpr){
@@ -192,57 +255,70 @@ public class TypeCheck {
 
 
     public String checkIdentExpr(IdentExpr idExpr){
-        //Check idExpr is int or float => call table's type
-        VariableInfo exprType = symbolTable.get(idExpr.ident);
-        //String exprType = currentTable.get(idExpr.ident);
+        VariableInfo exprInfo = symbolTable.get(idExpr.ident);
         //System.out.println(idExpr.ident+": "+exprType);
-        if (exprType == null){
+        if (exprInfo == null){
             Interpreter.fatalError("Variable " + idExpr.ident + " has not been declared yet!", Interpreter.EXIT_UNINITIALIZED_VAR_ERROR);
         }
-        else if (exprType.getType() == VariableInfo.VarType.INT){
+        return exprInfo.getType().name();
+        /*else if (exprInfo.getType() == VariableInfo.VarType.INT){
             return "int";
         } 
-        else if (exprType.getType() == VariableInfo.VarType.FLOAT) {
+        else if (exprInfo.getType() == VariableInfo.VarType.FLOAT) {
             return "float";
         } 
         
-        return "null";
-        
-
+        return "null";*/
     }
 
-    public boolean checkIntConstExpr(IntConstExpr intConstExpr){
-        return true;
+    public String checkIntConstExpr(IntConstExpr intConstExpr){
+        if (intConstExpr.ival > 0)
+            return "PosInt";
+        else if (intConstExpr.ival == 0)
+            return "ZeroInt";
+        else
+            return "NegInt";
     }
 
-    public boolean checkFloatConstExpr(FloatConstExpr floatConstExpr){
-        return true;
+    public String checkFloatConstExpr(FloatConstExpr floatConstExpr){
+        if (floatConstExpr.fval > 0.0)
+            return "PosFloat";
+        else if (floatConstExpr.fval == 0.0)
+            return "ZeroFloat";
+        else 
+            return "NegFloat";
     }
 
-    public boolean checkReadIntExpr(ReadIntExpr readIntExpr){
-        return true;
+    public String checkReadIntExpr(ReadIntExpr readIntExpr){
+        return "AnyInt";
     }
 
-    public boolean checkReadFloatExpr(ReadFloatExpr readFloatExpr){
-        return true;
+    public String checkReadFloatExpr(ReadFloatExpr readFloatExpr){
+        return "AntFloat";
     }
 
     //Retrieve Expr's type
     public String exprType(Expr expr){
-        if(expr instanceof IntConstExpr || expr instanceof ReadIntExpr){
-            return "int";
+        if(expr instanceof IntConstExpr){
+            IntConstExpr intConstExpr = (IntConstExpr) expr;
+            return checkIntConstExpr(intConstExpr);
         }
-        if(expr instanceof FloatConstExpr || expr instanceof ReadFloatExpr){
-            return "float";
+        if(expr instanceof ReadIntExpr){
+            ReadIntExpr readIntExpr = (ReadIntExpr) expr;
+            return checkReadIntExpr(readIntExpr);
+        }
+        if(expr instanceof FloatConstExpr){
+            FloatConstExpr floatConstExpr = (FloatConstExpr) expr;
+            return checkFloatConstExpr(floatConstExpr);
+        }
+        if(expr instanceof ReadFloatExpr){
+            ReadFloatExpr readFloatExpr = (ReadFloatExpr) expr;
+            return checkReadFloatExpr(readFloatExpr);
         }
         if(expr instanceof IdentExpr){
             IdentExpr identExpr = (IdentExpr) expr;
-            if (this.checkIdentExpr(identExpr) == "int"){
-                return "int";
-            }
-            else{
-                return "float";
-            }
+            return checkIdentExpr(identExpr);
+            
         }
         if(expr instanceof BinaryExpr){
             BinaryExpr binaryExpr = (BinaryExpr) expr;
@@ -258,46 +334,121 @@ public class TypeCheck {
     public String checkBinaryExpr(Expr expr1, Expr expr2, int op){
         String ex1 = exprType(expr1);
         String ex2 = exprType(expr2);
-        //checkDivByZero(op,expr2);
-        if(ex1.equals("int") && ex2.equals("int")){
-            checkDivByZero(op,expr2);
-            return "int";
-        }
-        if(ex1.equals("float") && ex2.equals("float")){
-            checkDivByZero(op,expr2);
-            return "float";
-        }
-        if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
+        if ((ex1.contains("Int") && ex2.contains("Float")) || (ex1.contains("Float") && ex2.contains("Int"))){
             //System.out.println(ex1);
             //System.out.println(ex2);
             Interpreter.fatalError(expr1+" and "+expr2+ " are two different types. The binary expression is invalid!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
+        if(ex1.contains("Int") && ex2.contains("Int")){
+            if (op == 1)
+                return plus(ex1,ex2)+"Int";
+            else if (op == 2)
+                return minus(ex1,ex2)+"Int";
+            else if (op == 3)
+                return multiply(ex1,ex2)+"Int";
+            else
+                return divideInt(ex1,ex2);
+                //checkDivByZero(expr2);
+        }
+        if(ex1.contains("Float") && ex2.contains("Float")){
+            if (op == 1)
+                return plus(ex1,ex2)+"Float";
+            else if (op == 2)
+                return minus(ex1,ex2)+"Float";
+            else if (op == 3)
+                return multiply(ex1,ex2)+"Float";
+            else
+                return divideFloat(ex1,ex2);
+                //checkDivByZero(expr2);
+        }
+        
         
         return "null";
     }
+    public String plus(String ex1, String ex2){
+        if ((ex1.contains("Neg") && ex2.contains("Neg")) || (ex1.contains("Neg") && ex2.contains("Zero")) || (ex1.contains("Zero") && ex2.contains("Neg")))
+            return "Neg"; //3
+        if (ex1.contains("Zero") && ex2.contains("Zero"))
+            return "Zero"; //1
+        if ((ex1.contains("Neg") && ex2.contains("Pos")) || ex1.contains("Pos") && ex2.contains("Neg"))
+            return "Any"; //2
+        if ((ex1.contains("Zero") && ex2.contains("Pos")) || ex1.contains("Pos") && ex2.contains("Zero") || (ex1.contains("Pos") && ex2.contains("Pos")))
+            return "Pos"; //3
+        if (ex1.contains("Any") || ex2.contains("Any"))
+            return "Any"; //7
+        return "null";
+        
+    }
+    public String minus(String ex1, String ex2){
+        if ((ex1.contains("Neg") && ex2.contains("Neg")) || (ex1.contains("Pos") && ex2.contains("Pos")))
+            return "Any"; //2
+        if ((ex1.contains("Zero") && ex2.contains("Neg")) || (ex1.contains("Pos") && ex2.contains("Neg")) || (ex1.contains("Pos") && ex2.contains("Zero")))
+            return "Pos"; //3
+        if ((ex1.contains("Neg") && ex2.contains("Zero")) || (ex1.contains("Neg") && ex2.contains("Pos")) || (ex1.contains("Zero") && ex2.contains("Pos")))
+            return "Neg"; //3
+        if ((ex1.contains("Zero") && ex2.contains("Zero")))
+            return "Zero"; //1
+        if (ex1.contains("Any") || ex2.contains("Any"))
+            return "Any"; //7
+        return "null";
+    }
+    public String multiply(String ex1, String ex2){
+        if ((ex1.contains("Neg") && ex2.contains("Neg")) || (ex1.contains("Pos") && ex2.contains("Pos")))
+            return "Pos"; //2
+        if ((ex1.contains("Pos") && ex2.contains("Neg")) || (ex1.contains("Neg") && ex2.contains("Pos")))
+            return "Neg"; //2
+        if ((ex1.contains("Zero") || ex2.contains("Zero")))
+            return "Zero"; //7
+        if (ex1.contains("Any") || ex2.contains("Any"))
+            return "Any"; //5
+        return "null";
+        
+    }
 
-    public void checkDivByZero(int op, Expr expr){
-        if (op == 4 && expr instanceof IntConstExpr){
+    public String divideInt(String ex1, String ex2){
+        if ((ex2.contains("Zero") || ex2.contains("Any")))
+            Interpreter.fatalError("Division-by-zero error!",Interpreter.EXIT_DIV_BY_ZERO_ERROR); //8
+        if (ex1.contains("Zero"))
+            return "ZeroInt"; //2
+        else
+            return "AnyInt"; //6
+    }
+
+    public String divideFloat(String ex1, String ex2){
+        if ((ex2.contains("Zero") || ex2.contains("Any")))
+            Interpreter.fatalError("Division-by-zero error!",Interpreter.EXIT_DIV_BY_ZERO_ERROR); //8
+        if ((ex1.contains("Neg") && ex2.contains("Neg")) || (ex1.contains("Pos") && ex2.contains("Pos")))
+            return "PosFloat"; //2
+        if ((ex1.contains("Pos") && ex2.contains("Neg")) || (ex1.contains("Neg") && ex2.contains("Pos")))
+            return "NegFloat"; //2
+        if (ex1.contains("Zero"))
+            return "ZeroFloat"; //2
+        if (ex1.contains("Any"))
+            return "AnyFloat"; //2
+        return "null";
+    }
+    public void checkDivByZero(Expr expr){
+        if (expr instanceof IntConstExpr){
             IntConstExpr intExpr = (IntConstExpr) expr;
             if (intExpr.ival == 0) {
                 Interpreter.fatalError("It's pointless to devide 0",Interpreter.EXIT_DIV_BY_ZERO_ERROR);
             }
         }
-        if (op == 4 && expr instanceof FloatConstExpr){
+        if (expr instanceof ReadIntExpr)
+
+        if (expr instanceof FloatConstExpr){
             FloatConstExpr floatExpr = (FloatConstExpr) expr;
             if (floatExpr.fval == 0.0) {
                 Interpreter.fatalError("It's pointless to devide 0",Interpreter.EXIT_DIV_BY_ZERO_ERROR);
             }
         }
-        if (op == 4 && expr instanceof IdentExpr){
+        if (expr instanceof ReadFloatExpr)
+
+        if (expr instanceof IdentExpr){
             IdentExpr identExpr = (IdentExpr) expr;
             //System.out.println(op+", "+ identExpr.ident);
-            if (symbolTable.get(identExpr.ident).getType() == VariableInfo.VarType.INT && symbolTable.get(identExpr.ident).getIntValue() == 0){
-                Interpreter.fatalError("It's pointless to devide 0",Interpreter.EXIT_DIV_BY_ZERO_ERROR);
-            }
-            if (symbolTable.get(identExpr.ident).getType() == VariableInfo.VarType.FLOAT && symbolTable.get(identExpr.ident).getFloatValue() == 0.0) {
-                Interpreter.fatalError("It's pointless to devide 0",Interpreter.EXIT_DIV_BY_ZERO_ERROR);
-            }
+            if(checkIdentExpr(identExpr).contains("Zero"))
+                Interpreter.fatalError("It's pointless to devide zero",Interpreter.EXIT_DIV_BY_ZERO_ERROR);
         }
     }
     //UnaryMinusExpr
@@ -507,25 +658,26 @@ public class TypeCheck {
         VariableInfo.VarType identType = symbolTable.get(ident).getType();
         //String identType = currentTable.get(ident);
         String exprType = exprType(expr);
-        VariableInfo.VarType exType;
+        //VariableInfo.VarType exType;
         //update ident's val
         VariableInfo newVal = getExprValue(expr);
-        if (exprType.equals("int")){
-            exType = VariableInfo.VarType.INT;
+        if ((identType.name().contains("Int") && exprType.contains("Float"))  || (identType.name().contains("Float") && exprType.contains("Int"))) {
+            //System.out.println(newVal.getType());
+            Interpreter.fatalError("Invalid assignment!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
+        }
+        if (exprType.contains("Int")){
+            //exType = VariableInfo.VarType.INT;
             newVal = newVal.copyWithIdentInt(ident);
             symbolTable.put(ident,newVal);
             //System.out.println(ident+": "+newVal.getIntValue());
         }
         else{
-            exType = VariableInfo.VarType.FLOAT;
+            //exType = VariableInfo.VarType.FLOAT;
             newVal = newVal.copyWithIdentFloat(ident);
             symbolTable.put(ident,newVal);
             //System.out.println(ident+": "+newVal.getFloatValue());
         }
-        if(identType != exType){
-            //System.out.println(exType);
-            Interpreter.fatalError("Invalid assignment!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
-        }
+        
     
     }  
         
@@ -552,18 +704,37 @@ public class TypeCheck {
     }
     
     //PrintStmt
+    //set { NegInt,ZeroInt, PosInt, AnyInt, NegFloat, ZeroFloat, PosFloat, AnyFloat}
     public void checkPrintStmt(Expr expr){
         String type = exprType(expr);
         //System.out.println(expr);
         VariableInfo val = getExprValue(expr);
-        if(type == "int" && !(expr instanceof ReadIntExpr)) System.out.println(val.getIntValue());
+        if(type.contains("Int") && !(expr instanceof ReadIntExpr)) {
+            /*if (val.getIntValue() > 0)
+                System.out.println("PosInt");
+            else if (val.getIntValue() < 0)
+                System.out.println("NegInt");
+            else
+                System.out.println("ZeroInt");*/
+            System.out.println(val.getType());
+        }
         if(expr instanceof ReadIntExpr) {
-            if (values.peek().getType() == VariableInfo.VarType.INT) System.out.println(values.poll().getIntValue());
+            System.out.println("AnyInt");
+            
             //else Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
         }
-        if(type == "float" && !(expr instanceof ReadFloatExpr)) System.out.println(val.getFloatValue());
+        if(type.contains("Float") && !(expr instanceof ReadFloatExpr)) {
+            System.out.println(val.getType());
+            /*if (val.getFloatValue() > 0)
+                System.out.println("PosFloat");
+            else if (val.getFloatValue() < 0)
+                System.out.println("NegFloat");
+            else
+                System.out.println("ZeroFloat");*/
+        }
         if(expr instanceof ReadFloatExpr) {
-            if (values.peek().getType() == VariableInfo.VarType.FLOAT) System.out.println(values.poll().getFloatValue());
+            System.out.println("AnyFloat");
+  
             //else Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
         }
     }
