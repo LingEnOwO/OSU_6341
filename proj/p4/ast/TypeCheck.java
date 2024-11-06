@@ -471,11 +471,11 @@ public class TypeCheck {
     public boolean checkCompExpr(Expr expr1, Expr expr2, int op){
         String ex1 = exprType(expr1);
         String ex2 = exprType(expr2);
-        if (!ex1.equals(ex2) && (!ex1.equals("null") && !ex2.equals("null"))){
+        if (((ex1.contains("Int") && ex2.contains("Float")) || (ex1.contains("Float") && ex2.contains("Int"))) && (!ex1.equals("null") && !ex2.equals("null"))){
             //System.out.println(ex1);
             Interpreter.fatalError(expr1+" and "+expr2+ " are two different types. The comparison expression is invalid!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
-        if(ex1.equals("int") && ex2.equals("int")){
+        if(ex1.contains("Int") && ex2.contains("Int")){
             Long val1,val2;
             if (expr1 instanceof ReadIntExpr){
                 getExprValue(expr1);
@@ -491,7 +491,7 @@ public class TypeCheck {
             else val2 = getExprValue(expr2).getIntValue();
             return checkIntCond(val1, val2, op);
         }
-        if(ex1.equals("float") && ex2.equals("float")){
+        if(ex1.contains("Float") && ex2.contains("Float")){
             Double val1,val2;
             if (expr1 instanceof ReadFloatExpr){
                 getExprValue(expr1);
@@ -649,7 +649,7 @@ public class TypeCheck {
     }
 
     //AssignStmt
-    public void checkAssignStmt(String ident, Expr expr){
+    public String checkAssignStmt(String ident, Expr expr){
         //if(currentTable.get(ident) == "null"){
         if(!isDeclared(ident)){
             //System.out.println("assignment");
@@ -677,7 +677,7 @@ public class TypeCheck {
             symbolTable.put(ident,newVal);
             //System.out.println(ident+": "+newVal.getFloatValue());
         }
-        
+        return ident;
     
     }  
         
@@ -692,6 +692,11 @@ public class TypeCheck {
 
     //IfStmt
     public void checkIfStmt(IfStmt is){ 
+        /*checkStmt(is.thenstmt);
+
+        if (is.elsestmt != null)
+            checkStmt(is.elsestmt);*/
+        
         if(condExpr(is.expr) == true){
             checkStmt(is.thenstmt);
         }
@@ -700,7 +705,50 @@ public class TypeCheck {
                 this.checkStmt(is.elsestmt);
             }
         }
-        
+        // merge part
+        /*if(is.elsestmt != null){
+            System.out.println("merge");
+            if (is.thenstmt instanceof BlockStmt ){ 
+                System.out.println("merge");
+                merge(is.thenstmt,is.elsestmt); //do plus() to if'expr and else's expr
+            }
+            
+        }*/
+    
+    }
+
+    public void merge(Stmt thenstmt, Stmt elsestmt){
+        AssignStmt thenSt = (AssignStmt) thenstmt;
+        AssignStmt elseSt = (AssignStmt) elsestmt;
+
+        if (thenSt.ident == elseSt.ident){
+            VariableInfo.VarType identType = symbolTable.get(thenSt.ident).getType();
+            VariableInfo expr1Info = getExprValue(thenSt.expr);
+            VariableInfo expr2Info = getExprValue(elseSt.expr);
+            
+            String resType = plus(expr1Info.getType().name(),expr2Info.getType().name());
+            if (identType.name().contains("Int")){
+                if (resType.equals("Pos"))
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.PosInt));
+                else if (resType.equals("Neg"))
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.NegInt));
+                else if (resType.equals("Zero"))
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.ZeroInt));
+                else
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.AnyInt));
+            }
+            else{
+                if (resType.equals("Pos"))
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.PosFloat));
+                else if (resType.equals("Neg"))
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.NegFloat));
+                else if (resType.equals("Zero"))
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.ZeroFloat));
+                else
+                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.AnyFloat));
+            }
+                
+        }
     }
     
     //PrintStmt
