@@ -5,11 +5,16 @@ import java.util.Queue;
 import java.util.LinkedList;
 import interpreter.Interpreter;
 import java.util.Scanner;
-//TODO: Refactoring -> in each java class 
+import java.util.Stack;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Set;
+//TODO: 
 public class TypeCheck {
     private HashMap<String, VariableInfo> symbolTable;
     private Queue<VariableInfo> values = new LinkedList<>();
     private Scanner s = new Scanner(System.in);
+    private Stack<String> stack = new Stack<>();
     public TypeCheck() {
         this.symbolTable = new HashMap<String, VariableInfo>();
     }
@@ -31,7 +36,6 @@ public class TypeCheck {
             VariableInfo exprVal = getExprValue(decl.expr);
             if (decl.expr instanceof ReadIntExpr ){
                 VariableInfo val = values.poll();
-                //if (val.getType() != VariableInfo.VarType.INT) Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
                 this.symbolTable.put(decl.varDecl.ident,val);
             }
             else{
@@ -44,7 +48,6 @@ public class TypeCheck {
             VariableInfo exprVal = getExprValue(decl.expr);
             if (decl.expr instanceof ReadFloatExpr){
                 VariableInfo val = values.poll();
-                //if (val.getType() != VariableInfo.VarType.FLOAT) Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
                 this.symbolTable.put(decl.varDecl.ident,val);
             }
             else{
@@ -153,11 +156,9 @@ public class TypeCheck {
                     else
                         return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() + expr2.getFloatValue());
                 }
-                //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 2){
                 if (type.contains("Int")) {
-                    //System.out.println("here");
                     if (type.equals("PosInt"))
                         return new VariableInfo(null, VariableInfo.VarType.PosInt, expr1.getIntValue() - expr2.getIntValue());
                     else if (type.equals("ZeroInt"))
@@ -177,11 +178,9 @@ public class TypeCheck {
                     else
                         return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() - expr2.getFloatValue());
                 }
-                //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 3){
                 if (type.contains("Int")) {
-                    //System.out.println("here");
                     if (type.equals("PosInt"))
                         return new VariableInfo(null, VariableInfo.VarType.PosInt, expr1.getIntValue() * expr2.getIntValue());
                     else if (type.equals("ZeroInt"))
@@ -201,11 +200,9 @@ public class TypeCheck {
                     else
                         return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() * expr2.getFloatValue());
                 }
-                //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
             else if (binaryExpr.op == 4){
                 if (type.contains("Int")) {
-                    //System.out.println("here");
                     if (type.equals("ZeroInt"))
                         return new VariableInfo(null, VariableInfo.VarType.ZeroInt, expr1.getIntValue() / expr2.getIntValue());
                     else
@@ -221,7 +218,6 @@ public class TypeCheck {
                     else
                         return new VariableInfo(null, VariableInfo.VarType.AnyFloat, expr1.getFloatValue() / expr2.getFloatValue());
                 }
-                //Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
             }
         }
         if (expr instanceof UnaryMinusExpr){
@@ -261,14 +257,6 @@ public class TypeCheck {
             Interpreter.fatalError("Variable " + idExpr.ident + " has not been declared yet!", Interpreter.EXIT_UNINITIALIZED_VAR_ERROR);
         }
         return exprInfo.getType().name();
-        /*else if (exprInfo.getType() == VariableInfo.VarType.INT){
-            return "int";
-        } 
-        else if (exprInfo.getType() == VariableInfo.VarType.FLOAT) {
-            return "float";
-        } 
-        
-        return "null";*/
     }
 
     public String checkIntConstExpr(IntConstExpr intConstExpr){
@@ -348,7 +336,6 @@ public class TypeCheck {
                 return multiply(ex1,ex2)+"Int";
             else
                 return divideInt(ex1,ex2);
-                //checkDivByZero(expr2);
         }
         if(ex1.contains("Float") && ex2.contains("Float")){
             if (op == 1)
@@ -359,7 +346,6 @@ public class TypeCheck {
                 return multiply(ex1,ex2)+"Float";
             else
                 return divideFloat(ex1,ex2);
-                //checkDivByZero(expr2);
         }
         
         
@@ -583,17 +569,27 @@ public class TypeCheck {
     }
     
     //----------uniList-----------
-    public void checkUnitList(UnitList unitList){
-        checkUnit(unitList.unit);
+    public String checkUnitList(UnitList unitList){
+        String u = checkUnit(unitList.unit);
+        String ul = "null";
         if(unitList.unitList != null){
-            checkUnitList(unitList.unitList);
+            ul = checkUnitList(unitList.unitList);
         }
+        //checkUnit(unitList.unit);
+        if (u != "null"){
+            stack.push(u);
+        }
+        if (ul != "null"){
+            stack.push(ul);
+            return ul;
+        }
+        return "null";
     }
     //-------------unit------------
-    public void checkUnit(Unit unit){
+    public String checkUnit(Unit unit){
         if (unit instanceof AssignStmt){
             AssignStmt assignStmt = (AssignStmt) unit;
-            checkAssignStmt(assignStmt.ident, assignStmt.expr);
+            return checkAssignStmt(assignStmt.ident, assignStmt.expr);
         }
         if(unit instanceof BlockStmt){
             BlockStmt blockStmt = (BlockStmt) unit;
@@ -618,13 +614,14 @@ public class TypeCheck {
             Decl decl = (Decl) unit;
             checkDecl(decl);
         }
+        return "null";
     }
 
     //-----------Stmt-----------
-    public void checkStmt(Stmt stmt){
+    public String checkStmt(Stmt stmt){
         if(stmt instanceof AssignStmt){
             AssignStmt assignStmt = (AssignStmt) stmt;
-            checkAssignStmt(assignStmt.ident, assignStmt.expr);
+            return checkAssignStmt(assignStmt.ident, assignStmt.expr);
         }
 
         if(stmt instanceof BlockStmt){
@@ -646,19 +643,17 @@ public class TypeCheck {
             WhileStmt whileStmt = (WhileStmt) stmt;
             checkWhileStmt(whileStmt);
         }
+        return "null";
     }
 
     //AssignStmt
     public String checkAssignStmt(String ident, Expr expr){
-        //if(currentTable.get(ident) == "null"){
         if(!isDeclared(ident)){
             //System.out.println("assignment");
             Interpreter.fatalError("Variable " + ident + " has not been declared yet!", Interpreter.EXIT_UNINITIALIZED_VAR_ERROR);
         }
         VariableInfo.VarType identType = symbolTable.get(ident).getType();
-        //String identType = currentTable.get(ident);
         String exprType = exprType(expr);
-        //VariableInfo.VarType exType;
         //update ident's val
         VariableInfo newVal = getExprValue(expr);
         if ((identType.name().contains("Int") && exprType.contains("Float"))  || (identType.name().contains("Float") && exprType.contains("Int"))) {
@@ -666,13 +661,11 @@ public class TypeCheck {
             Interpreter.fatalError("Invalid assignment!", Interpreter.EXIT_STATIC_CHECKING_ERROR);
         }
         if (exprType.contains("Int")){
-            //exType = VariableInfo.VarType.INT;
             newVal = newVal.copyWithIdentInt(ident);
             symbolTable.put(ident,newVal);
             //System.out.println(ident+": "+newVal.getIntValue());
         }
         else{
-            //exType = VariableInfo.VarType.FLOAT;
             newVal = newVal.copyWithIdentFloat(ident);
             symbolTable.put(ident,newVal);
             //System.out.println(ident+": "+newVal.getFloatValue());
@@ -684,70 +677,57 @@ public class TypeCheck {
 
     //BlockStmt
     public void checkBlockStmt(UnitList ul){
-        //SymbolTable previousTable = this.currentTable; 
-        //this.currentTable = new SymbolTable(previousTable); 
-        this.checkUnitList(ul);
-        //this.currentTable = previousTable;
+        checkUnitList(ul);
     }
 
     //IfStmt
     public void checkIfStmt(IfStmt is){ 
-        /*checkStmt(is.thenstmt);
-
-        if (is.elsestmt != null)
-            checkStmt(is.elsestmt);*/
-        
-        if(condExpr(is.expr) == true){
-            checkStmt(is.thenstmt);
-        }
-        else{
-            if(is.elsestmt != null){
-                this.checkStmt(is.elsestmt);
+        checkStmt(is.thenstmt);
+        Hashtable<String, VariableInfo> table1 = new Hashtable<>();
+        Hashtable<String, VariableInfo> table2 = new Hashtable<>();
+        String temp;
+        if (is.elsestmt != null){
+            while (!stack.isEmpty()){
+                temp = stack.pop();
+                table1.put(temp,symbolTable.get(temp));
+            }
+            checkStmt(is.elsestmt);
+            while (!stack.isEmpty()){
+                temp = stack.pop();
+                table2.put(temp,symbolTable.get(temp));
             }
         }
-        // merge part
-        /*if(is.elsestmt != null){
-            System.out.println("merge");
-            if (is.thenstmt instanceof BlockStmt ){ 
-                System.out.println("merge");
-                merge(is.thenstmt,is.elsestmt); //do plus() to if'expr and else's expr
-            }
-            
-        }*/
-    
+        Set<String> commonElements = new HashSet<>(table1.keySet());
+        commonElements.retainAll(table2.keySet());
+        for (String key : commonElements){
+            merge(key,table1.get(key).getType().name(),table2.get(key).getType().name());
+            //System.out.println(key);
+            //System.out.println(table1.get(key).getType().name()+" "+table2.get(key).getType().name());
+        }
     }
 
-    public void merge(Stmt thenstmt, Stmt elsestmt){
-        AssignStmt thenSt = (AssignStmt) thenstmt;
-        AssignStmt elseSt = (AssignStmt) elsestmt;
-
-        if (thenSt.ident == elseSt.ident){
-            VariableInfo.VarType identType = symbolTable.get(thenSt.ident).getType();
-            VariableInfo expr1Info = getExprValue(thenSt.expr);
-            VariableInfo expr2Info = getExprValue(elseSt.expr);
-            
-            String resType = plus(expr1Info.getType().name(),expr2Info.getType().name());
-            if (identType.name().contains("Int")){
-                if (resType.equals("Pos"))
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.PosInt));
-                else if (resType.equals("Neg"))
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.NegInt));
-                else if (resType.equals("Zero"))
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.ZeroInt));
-                else
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.AnyInt));
-            }
-            else{
-                if (resType.equals("Pos"))
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.PosFloat));
-                else if (resType.equals("Neg"))
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.NegFloat));
-                else if (resType.equals("Zero"))
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.ZeroFloat));
-                else
-                    symbolTable.put(thenSt.ident, new VariableInfo(thenSt.ident,VariableInfo.VarType.AnyFloat));
-            }
-                
+    public void merge(String ident, String type1, String type2){
+        VariableInfo.VarType identType = symbolTable.get(ident).getType();
+        String resType = plus(type1,type2);
+        if (identType.name().contains("Int")){
+            if (resType.equals("Pos"))
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.PosInt));
+            else if (resType.equals("Neg"))
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.NegInt));
+            else if (resType.equals("Zero"))
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.ZeroInt));
+            else
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.AnyInt));
+        }
+        else{
+            if (resType.equals("Pos"))
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.PosFloat));
+            else if (resType.equals("Neg"))
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.NegFloat));
+            else if (resType.equals("Zero"))
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.ZeroFloat));
+            else
+                symbolTable.put(ident, new VariableInfo(ident,VariableInfo.VarType.AnyFloat));
         }
     }
     
@@ -758,41 +738,23 @@ public class TypeCheck {
         //System.out.println(expr);
         VariableInfo val = getExprValue(expr);
         if(type.contains("Int") && !(expr instanceof ReadIntExpr)) {
-            /*if (val.getIntValue() > 0)
-                System.out.println("PosInt");
-            else if (val.getIntValue() < 0)
-                System.out.println("NegInt");
-            else
-                System.out.println("ZeroInt");*/
             System.out.println(val.getType());
         }
         if(expr instanceof ReadIntExpr) {
             System.out.println("AnyInt");
-            
-            //else Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
         }
         if(type.contains("Float") && !(expr instanceof ReadFloatExpr)) {
             System.out.println(val.getType());
-            /*if (val.getFloatValue() > 0)
-                System.out.println("PosFloat");
-            else if (val.getFloatValue() < 0)
-                System.out.println("NegFloat");
-            else
-                System.out.println("ZeroFloat");*/
         }
         if(expr instanceof ReadFloatExpr) {
             System.out.println("AnyFloat");
-  
-            //else Interpreter.fatalError("Failed to read from stdin", Interpreter.EXIT_FAILED_STDIN_READ);
         }
     }
 
     //WhileStmt
-    public void checkWhileStmt(WhileStmt ws){
+    public String checkWhileStmt(WhileStmt ws){
         while(condExpr(ws.expr))
             checkStmt(ws.body);
+        return "WhileStmt";
     }
-    
-
-
 }
