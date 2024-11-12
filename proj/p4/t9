@@ -1,4 +1,9 @@
-int z = readint;
-{
-  int z = z + readint;
-}
+float x;
+float y;
+float z;
+x = readfloat;
+y = readfloat;
+z = y-x;
+print x;
+print y;
+print z;

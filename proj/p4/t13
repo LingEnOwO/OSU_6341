@@ -1,0 +1,6 @@
+int x;
+x = readint;
+float y;
+y = readfloat - 5.;
+print(x);
+print(y);

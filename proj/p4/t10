@@ -1,4 +1,7 @@
-int z = readint;
-{
-  int z = z / readint;
-}
+int x= readint;
+int z;
+if(x>0){x=0;} else {z=1;}
+int y=z;
+print x;
+print y;
+print z;

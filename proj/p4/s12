@@ -1,2 +1,4 @@
 float x = readfloat;
 print x;
+int y = readint;
+print y;

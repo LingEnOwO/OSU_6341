@@ -17,6 +17,6 @@ public class BlockStmt extends Stmt {
     }
 
     public void check(TypeCheck checker){
-        checker.checkBlockStmt(block);
+        checker.checkBlockStmt(this,-1);
     }
 }

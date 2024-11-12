@@ -11,3 +11,5 @@ else
   b = 0;
   print b;
   a = 1;}
+print a;
+print b;

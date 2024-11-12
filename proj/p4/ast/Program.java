@@ -13,6 +13,6 @@ public class Program extends ASTNode {
 
     public void check(TypeCheck checker){
         //unitList.check(checker);
-        checker.checkUnitList(unitList);
+        checker.checkUnitList(unitList,-1);
     }
 }
