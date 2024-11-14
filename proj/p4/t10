@@ -1,7 +1,15 @@
 int x= readint;
-int z;
+int z = -1;
 if(x>0){x=0;} else {z=1;}
 int y=z;
 print x;
 print y;
 print z;
+
+float a = readfloat;
+float b = -3.;
+if(a>0.){a=0.;} else {b=1.;}
+float c=b;
+print a;
+print b;
+print c;
