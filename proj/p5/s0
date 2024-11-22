@@ -1,0 +1,2 @@
+int x = 9; int y = 0;
+if (x > 0){x = readint;}print x;

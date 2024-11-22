@@ -1,0 +1,6 @@
+int z = 3;
+while (z > 0) {
+  print z;
+  z = z - 1;
+}
+print z;
