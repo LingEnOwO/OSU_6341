@@ -16,7 +16,9 @@ public class TypeCheck {
     private Queue<VariableInfo> values = new LinkedList<>();
     private Scanner s = new Scanner(System.in);
     private Stack<String> stack = new Stack<>();
-    private Hashtable<String, VariableInfo> whileState = new Hashtable<>();
+    //private Hashtable<String, VariableInfo> whileState = new Hashtable<>();
+    //private Hashtable<String, VariableInfo> table1 = new Hashtable<>();
+    //private Hashtable<String, VariableInfo> table2 = new Hashtable<>();
     public TypeCheck() {
         this.symbolTable = new HashMap<String, VariableInfo>();
     }
@@ -46,6 +48,7 @@ public class TypeCheck {
             }
             else{
                 VariableInfo val = exprVal.copyWithIdentInt(decl.varDecl.ident);
+                //System.out.println(val.getIdent()+":"+val.getType().name());
                 this.symbolTable.put(decl.varDecl.ident,val);
             }
            
@@ -85,7 +88,7 @@ public class TypeCheck {
             return "null";
         }
         else{
-            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.AnyInt));
+            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.NoneInt));
             // for debugging
             //System.out.println("Declared variable: " + var.ident);
             return "Int";
@@ -100,7 +103,7 @@ public class TypeCheck {
             return "null";
         }
         else{
-            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.AnyFloat));
+            this.symbolTable.put(var.ident, new VariableInfo(var.ident,VariableInfo.VarType.NoneFloat));
             // for debugging
             //System.out.println("Declared variable: " + var.ident);
             return "Float";
@@ -233,16 +236,45 @@ public class TypeCheck {
             UnaryMinusExpr unaryMinusExpr = (UnaryMinusExpr) expr;
             if(unaryMinusExpr.expr instanceof IntConstExpr){
                 IntConstExpr intConstExpr = (IntConstExpr) unaryMinusExpr.expr;
-                return new VariableInfo(null, VariableInfo.VarType.NegInt, intConstExpr.ival*(-1));
+                if (intConstExpr.ival > 0L)
+                    return new VariableInfo(null, VariableInfo.VarType.NegInt, intConstExpr.ival*(-1));
+                if (intConstExpr.ival == 0L)
+                    return new VariableInfo(null, VariableInfo.VarType.ZeroInt, intConstExpr.ival*(-1)); 
+                else
+                    return new VariableInfo(null, VariableInfo.VarType.PosInt, intConstExpr.ival*(-1));
             }
             if(unaryMinusExpr.expr instanceof FloatConstExpr){
                 FloatConstExpr floatConstExpr = (FloatConstExpr) unaryMinusExpr.expr;
-                return new VariableInfo(null, VariableInfo.VarType.NegFloat, floatConstExpr.fval*(-1.0));
+                if (floatConstExpr.fval > 0.0)
+                    return new VariableInfo(null, VariableInfo.VarType.NegFloat, floatConstExpr.fval*(-1.0));
+                if (floatConstExpr.fval == 0.0)
+                    return new VariableInfo(null, VariableInfo.VarType.ZeroFloat, floatConstExpr.fval*(-1.0));
+                else
+                    return new VariableInfo(null, VariableInfo.VarType.PosFloat, floatConstExpr.fval*(-1.0));
             }
             if(unaryMinusExpr.expr instanceof IdentExpr){
                 IdentExpr identExpr = (IdentExpr) unaryMinusExpr.expr;
-                if (symbolTable.get(identExpr.ident).getType().name().contains("Int")) return new VariableInfo(null, VariableInfo.VarType.NegInt, symbolTable.get(identExpr.ident).getIntValue()*(-1));
-                else return new VariableInfo(null, VariableInfo.VarType.NegFloat, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
+                if (symbolTable.get(identExpr.ident).getType().name().contains("Int")) {
+                    //System.out.println(symbolTable.get(identExpr.ident).getType().name());
+                    if (symbolTable.get(identExpr.ident).getType().name().contains("Pos"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegInt, symbolTable.get(identExpr.ident).getIntValue()*(-1));
+                    if (symbolTable.get(identExpr.ident).getType().name().contains("Zero"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroInt, symbolTable.get(identExpr.ident).getIntValue()*(-1));
+                    if (symbolTable.get(identExpr.ident).getType().name().contains("Neg"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosInt, symbolTable.get(identExpr.ident).getIntValue()*(-1));
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyInt, symbolTable.get(identExpr.ident).getIntValue()*(-1));
+                }
+                else {
+                    if (symbolTable.get(identExpr.ident).getType().name().contains("Pos"))
+                        return new VariableInfo(null, VariableInfo.VarType.NegFloat, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
+                    if (symbolTable.get(identExpr.ident).getType().name().contains("Zero"))
+                        return new VariableInfo(null, VariableInfo.VarType.ZeroFloat, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
+                    if (symbolTable.get(identExpr.ident).getType().name().contains("Neg"))
+                        return new VariableInfo(null, VariableInfo.VarType.PosFloat, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
+                    else
+                        return new VariableInfo(null, VariableInfo.VarType.AnyFloat, symbolTable.get(identExpr.ident).getFloatValue()*(-1.0));
+                }
             }
             if (unaryMinusExpr.expr instanceof BinaryExpr){
                 BinaryExpr binaryExpr = (BinaryExpr) unaryMinusExpr.expr;
@@ -270,8 +302,12 @@ public class TypeCheck {
                         return new VariableInfo(null, VariableInfo.VarType.AnyFloat, res.getFloatValue()*(-1.0));
                 }
             }
-            if (unaryMinusExpr.expr instanceof ReadIntExpr){}
-            if (unaryMinusExpr.expr instanceof ReadFloatExpr){}
+            if (unaryMinusExpr.expr instanceof ReadIntExpr){
+                return new VariableInfo(null, VariableInfo.VarType.AnyInt, 0L);
+            }
+            if (unaryMinusExpr.expr instanceof ReadFloatExpr){
+                return new VariableInfo(null, VariableInfo.VarType.AnyFloat, 0.0);
+            }
         }
         if (expr instanceof ReadIntExpr || expr instanceof ReadFloatExpr){
             while(s.hasNext()){
@@ -480,10 +516,18 @@ public class TypeCheck {
             return "NegInt";
         if (exprType(expr).equals("NegInt"))
             return "PosInt";
+        if (exprType(expr).equals("ZeroInt"))
+            return "ZeroInt";
+        if (exprType(expr).equals("AnyInt"))
+            return "AnyInt"; 
         if (exprType(expr).equals("PosFloat"))
             return "NegFloat";
         if (exprType(expr).equals("NegFloat"))
             return "PosFloat";
+        if (exprType(expr).equals("ZeroFloat"))
+            return "ZeroFloat";
+        if (exprType(expr).equals("AnyFloat"))
+            return "AnyFloat";
         return "null";
     }
 
@@ -619,33 +663,21 @@ public class TypeCheck {
     }
     
     //----------uniList-----------
-    public String checkUnitList(UnitList unitList, int code){
-        String u = checkUnit(unitList.unit, code);
-        String ul = "null";
+    public void checkUnitList(UnitList unitList){
+        checkUnit(unitList.unit);
         if(unitList.unitList != null){
-            ul = checkUnitList(unitList.unitList, code);
+            checkUnitList(unitList.unitList);
         }
-        //checkUnit(unitList.unit);
-        if (u != "null"){
-            if (code == 0)
-                stack.push(u);
-        }
-        if (ul != "null" ){
-            if (code == 0)
-                stack.push(ul);
-            return ul;
-        }
-        return "null";
     }
     //-------------unit------------
-    public String checkUnit(Unit unit, int code){
+    public void checkUnit(Unit unit){
         if (unit instanceof AssignStmt){
             AssignStmt assignStmt = (AssignStmt) unit;
-            return checkAssignStmt(assignStmt.ident, assignStmt.expr, code);
+            checkAssignStmt(assignStmt.ident, assignStmt.expr);
         }
         if(unit instanceof BlockStmt){
             BlockStmt blockStmt = (BlockStmt) unit;
-            checkBlockStmt(blockStmt,-1);
+            checkBlockStmt(blockStmt);
         }
 
         if(unit instanceof IfStmt){
@@ -666,19 +698,18 @@ public class TypeCheck {
             Decl decl = (Decl) unit;
             checkDecl(decl);
         }
-        return "null";
     }
 
     //-----------Stmt-----------
-    public String checkStmt(Stmt stmt){
+    public void checkStmt(Stmt stmt){
         if(stmt instanceof AssignStmt){
             AssignStmt assignStmt = (AssignStmt) stmt;
-            return checkAssignStmt(assignStmt.ident, assignStmt.expr,-1);
+            checkAssignStmt(assignStmt.ident, assignStmt.expr);
         }
 
         if(stmt instanceof BlockStmt){
             BlockStmt blockStmt = (BlockStmt) stmt;
-            checkBlockStmt(blockStmt,-1);
+            checkBlockStmt(blockStmt);
         }
 
         if(stmt instanceof IfStmt){
@@ -695,14 +726,10 @@ public class TypeCheck {
             WhileStmt whileStmt = (WhileStmt) stmt;
             checkWhileStmt(whileStmt);
         }
-        return "null";
     }
 
     //AssignStmt
-    public String checkAssignStmt(String ident, Expr expr, int code){
-        if (code == 1){
-            whileState.put(ident,symbolTable.get(ident));
-        }
+    public void checkAssignStmt(String ident, Expr expr){
         if(!isDeclared(ident)){
             //System.out.println("assignment");
             Interpreter.fatalError("Variable " + ident + " has not been declared yet!", Interpreter.EXIT_UNINITIALIZED_VAR_ERROR);
@@ -740,65 +767,57 @@ public class TypeCheck {
                 //System.out.println(ident+": "+newVal.getFloatValue());
             }
         }
-        return ident;
-    
     }  
         
 
     //BlockStmt
-    public void checkBlockStmt(BlockStmt blockStmt, int code){
+    public void checkBlockStmt(BlockStmt blockStmt){
         // code 0 -> if-else | 1-> while
-        checkUnitList(blockStmt.block, code);
+        checkUnitList(blockStmt.block);
     }
 
     //IfStmt
     public void checkIfStmt(IfStmt is){ 
-        BlockStmt bsThen = (BlockStmt) is.thenstmt;
-        Hashtable<String, VariableInfo> table1 = new Hashtable<>(symbolTable);
-        Hashtable<String, VariableInfo> table2 = new Hashtable<>(symbolTable);
-        String temp;
+        Hashtable<String, VariableInfo> originalTable = new Hashtable<>(symbolTable);
         String cond = condExpr(is.expr);
         if (cond.equals("True")){
             if (is.elsestmt != null)
                 Interpreter.fatalError("Else part is Dead Code!",Interpreter.EXIT_DEAD_CODE);
-            checkBlockStmt(bsThen,0);
+            checkStmt(is.thenstmt);
             return;
         }
         if (cond.equals("False"))
             Interpreter.fatalError("Then part is Dead Code!",Interpreter.EXIT_DEAD_CODE);
-        checkBlockStmt(bsThen,0);
+        checkStmt(is.thenstmt);
+        Hashtable<String, VariableInfo> ifTable = new Hashtable<>(symbolTable);
+        Set<String> commonElements = new HashSet<>(ifTable.keySet());
         if (is.elsestmt != null){
-            while (!stack.isEmpty()){
-                temp = stack.pop();
-                //System.out.println("temp1:" + temp);
-                table1.put(temp,symbolTable.get(temp));
-            }
-            /*for (Map.Entry<String, VariableInfo> entry : table1.entrySet()) {
-                System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue().getType().name());
-            }*/
-            BlockStmt bsElse = (BlockStmt) is.elsestmt;
-            checkBlockStmt(bsElse,0);
-            while (!stack.isEmpty()){
-                temp = stack.pop();
-                //System.out.println("temp2:" + temp);
-                table2.put(temp,symbolTable.get(temp));
-            }
+            checkStmt(is.elsestmt);
+            Hashtable<String, VariableInfo> elseTable = new Hashtable<>(symbolTable);
+            commonElements.retainAll(elseTable.keySet());
+            for (String key : commonElements)
+                merge(key,ifTable.get(key).getType().name(),elseTable.get(key).getType().name());
             /*for (Map.Entry<String, VariableInfo> entry : table2.entrySet()) {
                 System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue().getType().name());
             }*/
         }
-        Set<String> commonElements = new HashSet<>(table1.keySet());
-        commonElements.retainAll(table2.keySet());
-        for (String key : commonElements){
-            merge(key,table1.get(key).getType().name(),table2.get(key).getType().name());
-            //System.out.println(key);
-            //System.out.println(table1.get(key).getType().name()+" "+table2.get(key).getType().name());
+        else{
+            commonElements.retainAll(originalTable.keySet());
+            for (String key : commonElements){
+                merge(key,ifTable.get(key).getType().name(),originalTable.get(key).getType().name());
+                //System.out.println(key+":"+symbolTable.get(key).getType().name());
+                //System.out.println(table1.get(key).getType().name()+" "+table2.get(key).getType().name());
+            }
         }
+        
+        
     }
 
     public void merge(String ident, String type1, String type2){
+        if (type1.contains("None") || type2.contains("None"))
+            Interpreter.fatalError("There are uninitialized variables", Interpreter.EXIT_UNINITIALIZED_VAR_ERROR);
         VariableInfo.VarType identType = symbolTable.get(ident).getType();
-        String resType = plus(type1,type2);
+        String resType = integrate(type1,type2);
         Long longVal = 0L;
         Double doubleVal = 0.0;
         if (identType.name().contains("Int")){
@@ -823,12 +842,24 @@ public class TypeCheck {
         }
     }
     
+    public String integrate(String type1, String type2){
+        if (type1.contains("Neg") && type2.contains("Neg"))
+            return "Neg";
+        if (type1.contains("Zero") && type2.contains("Zero"))
+            return "Zero";
+        if (type1.contains("Pos") && type2.contains("Pos"))
+            return "Pos";
+        else
+            return "Any";
+        
+    }
     //PrintStmt
     //set { NegInt,ZeroInt, PosInt, AnyInt, NegFloat, ZeroFloat, PosFloat, AnyFloat}
     public void checkPrintStmt(Expr expr){
         String type = exprType(expr);
         //System.out.println(expr);
         VariableInfo val = getExprValue(expr);
+        //System.out.println(val.getType().name()+" " + val.getIntValue());
         if (val.getIntValue() == null && val.getFloatValue() == null)
             Interpreter.fatalError("Variable " + val.getIdent() + " has not been initialized yet!", Interpreter.EXIT_UNINITIALIZED_VAR_ERROR);
         if(type.contains("Int") && !(expr instanceof ReadIntExpr)) {
@@ -848,13 +879,16 @@ public class TypeCheck {
     //WhileStmt
     public void checkWhileStmt(WhileStmt ws){
         //while(condExpr(ws.expr))
-        BlockStmt bs = (BlockStmt) ws.body;
-        
         //VariableInfo in whileState stores the original type
         String temp, originalType, newType, postMerge;
-        boolean flag = false;
+        int size, count;
+        if (condExpr(ws.expr).equals("False"))
+            Interpreter.fatalError("The loop is Dead Code!",Interpreter.EXIT_DEAD_CODE);
+        Hashtable<String, VariableInfo> whileState = new Hashtable<>(symbolTable);
         while(true){
-            checkBlockStmt(bs,1);
+            checkStmt(ws.body);
+            size = whileState.size();
+            count = 0;
             for (Map.Entry<String, VariableInfo> entry : whileState.entrySet()) {
                 //System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue().getType().name());
                 temp = entry.getKey();
@@ -863,12 +897,11 @@ public class TypeCheck {
                 merge(temp, originalType, newType);
                 postMerge = symbolTable.get(temp).getType().name();
                 if (postMerge == newType){
-                    flag = true;
-                    break;
+                    count += 1;
+                    if (count == size)
+                        return;
                 }
             }
-            if (flag)
-                break;
         }
         
     }

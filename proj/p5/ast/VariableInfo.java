@@ -2,7 +2,7 @@ package ast;
 
 public class VariableInfo {
     public enum VarType{
-        NegInt, ZeroInt, PosInt, AnyInt, NegFloat, ZeroFloat, PosFloat, AnyFloat
+        NoneInt,NoneFloat,NegInt, ZeroInt, PosInt, AnyInt, NegFloat, ZeroFloat, PosFloat, AnyFloat
     }
     private String ident;
     private VarType type;

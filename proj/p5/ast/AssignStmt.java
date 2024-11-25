@@ -19,6 +19,6 @@ public class AssignStmt extends Stmt {
     }
 
     public void check(TypeCheck checker) {
-        checker.checkAssignStmt(ident, expr,-1);
+        checker.checkAssignStmt(ident, expr);
     }
 }
