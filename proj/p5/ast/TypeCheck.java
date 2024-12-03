@@ -790,6 +790,8 @@ public class TypeCheck {
             Interpreter.fatalError("Then part is Dead Code!",Interpreter.EXIT_DEAD_CODE);
         checkStmt(is.thenstmt);
         Hashtable<String, VariableInfo> ifTable = new Hashtable<>(symbolTable);
+        symbolTable.clear();
+        symbolTable.putAll(originalTable);
         Set<String> commonElements = new HashSet<>(ifTable.keySet());
         if (is.elsestmt != null){
             checkStmt(is.elsestmt);
